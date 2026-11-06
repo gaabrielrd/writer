@@ -1,18 +1,22 @@
 import { source } from './bookContentFixture.mjs';
 import { sha256 } from '../../src/bookRestoreUploadContracts.mjs';
 import { legacyMutation as mutation } from './bookLegacyRestoreFixture.mjs';
-export async function uploadArchiveRestore(api, uid, id, records) {
-  const src = await source(records),
+export async function uploadArchiveRestore(api, uid, id, records, version = 1) {
+  const src = await source(records, 'book', version),
     bytes = await src.read(0, src.size);
-  return { progress: await uploadSealedArchiveRestore(api, uid, id, bytes), source: src, bytes };
+  return {
+    progress: await uploadSealedArchiveRestore(api, uid, id, bytes, version),
+    source: src,
+    bytes,
+  };
 }
-export async function uploadSealedArchiveRestore(api, uid, id, bytes) {
+export async function uploadSealedArchiveRestore(api, uid, id, bytes, version = 1) {
   let progress = (
     await api.startBookRestore(uid, {
       operationId: id,
       source: {
         format: 'writer-book-archive',
-        version: 1,
+        version,
         byteLength: bytes.length,
         sha256: sha256(bytes),
       },

@@ -1,5 +1,6 @@
 import { collection, doc, getDocs, getDoc, onSnapshot, runTransaction } from 'firebase/firestore';
 import { firestore } from '@/shared/lib';
+import { nextPersonaCatalogState } from '../../../../functions/src/personaCatalogProtocol.mjs';
 import { validatePersona, isDefaultPersona, type AIPersona } from '../model/persona';
 import {
   projectPersonaRestoreOrigin,
@@ -164,6 +165,9 @@ export async function savePersona(
     }
     if ((previous?.revision ?? null) !== expectedRevision)
       throw new Error('Esta persona mudou em outra janela. Reabra a edição antes de salvar.');
+    const catalogRef = doc(firestore, 'users', ownerId, 'aiPersonaCatalog', 'current');
+    const catalog = await transaction.get(catalogRef);
+    const nextCatalog = nextPersonaCatalogState(catalog.exists() ? catalog.data() : null);
     const now = Date.now();
     const saved = {
       ...persona,
@@ -172,6 +176,7 @@ export async function savePersona(
       updatedAt: now,
     };
     transaction.set(reference, { ...saved, ...(origin ? { restoreOrigin: origin } : {}) });
+    transaction.set(catalogRef, nextCatalog);
     return saved;
   });
 }

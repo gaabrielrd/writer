@@ -119,21 +119,21 @@ test('real author-only service reads are side-effect free and published root gra
     );
   }
 });
-test('native item versions detect isolated SDK metadata changes and ABA while root/source remain equal', async () => {
+test('native item versions detect isolated native metadata changes and ABA while SDK requires the root clock', async () => {
   const source = await start(),
     item = (await list(source)).items[0],
     snapshot = await admin.doc('books/book').get();
   const firestore = client();
-  await assertSucceeds(
+  await assertFails(
     updateDoc(doc(firestore, 'books/book/chapters/existing'), { title: 'Outro título' }),
   );
+  await admin.doc('books/book/chapters/existing').update({ title: 'Outro título' });
   assert.ok(snapshot.updateTime.isEqual((await admin.doc('books/book').get()).updateTime));
   assert.equal((await start()).sourceToken, source.sourceToken);
   assert.notEqual((await list(source)).items[0].itemToken, item.itemToken);
   await assert.rejects(read(source, item), { details: { reason: 'book-backup-item-changed' } });
-  await assertSucceeds(
-    updateDoc(doc(firestore, 'books/book/chapters/existing'), { title: 'Vazio' }),
-  );
+  await assertFails(updateDoc(doc(firestore, 'books/book/chapters/existing'), { title: 'Vazio' }));
+  await admin.doc('books/book/chapters/existing').update({ title: 'Vazio' });
   await assert.rejects(read(source, item), { code: 'failed-precondition' });
 });
 test('atomic SDK empty chapter addition/removal invalidates the old source even when total words stay zero', async () => {

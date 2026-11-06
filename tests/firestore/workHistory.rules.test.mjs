@@ -18,6 +18,7 @@ import {
   deleteField,
   query,
   limit,
+  writeBatch,
 } from 'firebase/firestore';
 import { createWorkHistoryService } from '../../functions/src/workHistory.mjs';
 import { createWorkProgressService } from '../../functions/src/workProgress.mjs';
@@ -157,9 +158,11 @@ test('SDK history is server-only for owner, foreign account and anonymous; expli
     for (const name of ['workVersions', 'workVersionBodies'])
       await assertFails(getDocs(query(collection(client(uid), 'books/book/' + name), limit(25))));
   await assertFails(updateDoc(doc(client(), chapter.path), { content: 'Cliente antigo' }));
-  await assertSucceeds(
-    updateDoc(doc(client(), chapter.path), { title: 'Novo título', updatedAt: 101 }),
-  );
+  const own = client(),
+    batch = writeBatch(own);
+  batch.update(doc(own, chapter.path), { title: 'Novo título', updatedAt: 101 });
+  batch.update(doc(own, 'books/book'), { updatedAt: 101 });
+  await assertSucceeds(batch.commit());
   assert.notEqual((await source()).sourceToken, current.sourceToken);
   assert.equal(await api.getWorkVersionSource('other', { target, resource }), null);
   await assert.rejects(api.readWorkVersion('other', { target, versionId: version.id }), {
@@ -363,7 +366,7 @@ test('SDK metadata pages and deleted-source versions remain private; explicit ve
   );
   await admin.doc('books/book').update({ deleting: true });
   let cleanup;
-  for (let index = 0; index < 50; index++) {
+  for (let index = 0; index < 500; index++) {
     cleanup = await scenes.deleteSceneBook('author', {
       target,
       operationId: op('delete-project'),

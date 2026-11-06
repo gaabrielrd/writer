@@ -1,3 +1,5 @@
+import { BOOK_EDITORIAL_CAPTURE_DEFINITIONS } from './bookEditorialCaptureCatalog.mjs';
+import { BOOK_RESTORE_EDITORIAL_COLLECTIONS } from './bookRestoreEditorialInventory.mjs';
 import { BOOK_RESTORE_NATIVE_V4, readBookRestoreArtifact } from './bookRestoreArtifacts.mjs';
 import {
   BOOK_RESTORE_RESOURCE_FLAT,
@@ -45,6 +47,33 @@ export const BOOK_RESTORE_AUDIT_LAYOUT = Object.freeze([
   { kind: 'cover-storage', collection: 'preparedCoverStorage', root: 'job' },
   { kind: 'persona-library-profile', collection: 'aiPersonas', root: 'personas' },
 ]);
+export const BOOK_RESTORE_EDITORIAL_AUDIT_LAYOUT = Object.freeze([
+  ...BOOK_RESTORE_AUDIT_LAYOUT,
+  ...Object.entries(BOOK_RESTORE_EDITORIAL_COLLECTIONS).map(([kind, collection]) => ({
+    kind,
+    collection,
+    root: 'book',
+  })),
+  ...[
+    ...new Set([
+      ...Object.values(BOOK_EDITORIAL_CAPTURE_DEFINITIONS).map((value) => value.collection),
+      'literaryPlanLinks',
+    ]),
+  ]
+    .filter(
+      (collection) =>
+        typeof collection === 'string' &&
+        !Object.values(BOOK_RESTORE_EDITORIAL_COLLECTIONS).includes(collection),
+    )
+    .sort()
+    .map((collection) => ({
+      kind: 'unrestored-editorial',
+      collection,
+      root: 'book',
+      forbidden: true,
+    })),
+  { kind: 'editorial-control', collection: 'preparedEditorial', root: 'job', mutable: true },
+]);
 export function auditAnchor(artifact, kind, id) {
   return {
     kind,
@@ -74,9 +103,15 @@ function queryBase(db, loaded, family) {
   return { path, collection: db.collection(path + '/' + family.collection) };
 }
 /** One bounded physical page, with a separate native parent cursor for nested namespaces. */
-export async function advanceBookRestorePhysicalAudit(tx, db, loaded, p) {
-  if (p.family >= BOOK_RESTORE_AUDIT_LAYOUT.length) inconsistent();
-  const family = BOOK_RESTORE_AUDIT_LAYOUT[p.family],
+export async function advanceBookRestorePhysicalAudit(
+  tx,
+  db,
+  loaded,
+  p,
+  layout = BOOK_RESTORE_AUDIT_LAYOUT,
+) {
+  if (p.family >= layout.length) inconsistent();
+  const family = layout[p.family],
     base = queryBase(db, loaded, family);
   let query;
   if (family.parentCollection) {
@@ -112,6 +147,7 @@ export async function advanceBookRestorePhysicalAudit(tx, db, loaded, p) {
   query = query.orderBy('__name__').select('stageKind').limit(8);
   if (p.after !== null) query = query.startAfter(p.after);
   const rows = await tx.get(query);
+  if (family.forbidden && rows.docs.length) inconsistent();
   for (const snapshot of rows.docs) {
     if (Object.hasOwn(snapshot.data(), 'stageKind')) inconsistent();
     const kind =
@@ -124,7 +160,7 @@ export async function advanceBookRestorePhysicalAudit(tx, db, loaded, p) {
     p.checkedPhysical = sum(p.checkedPhysical, 1);
     if (p.checkedPhysical > p.checkedArtifacts) inconsistent();
     p.after = snapshot.id;
-    p.anchor = auditAnchor(artifact, kind, id);
+    if (!family.mutable) p.anchor = auditAnchor(artifact, kind, id);
   }
   if (!rows.docs.length) {
     if (family.parentCollection) {

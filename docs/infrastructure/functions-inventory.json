@@ -52,7 +52,7 @@
     },
     {
       "endpoint": "bookPortabilityApi",
-      "actionCount": 43,
+      "actionCount": 50,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -107,7 +107,7 @@
     },
     {
       "endpoint": "generationApi",
-      "actionCount": 4,
+      "actionCount": 13,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -129,7 +129,7 @@
     },
     {
       "endpoint": "loreApi",
-      "actionCount": 16,
+      "actionCount": 17,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -151,7 +151,7 @@
     },
     {
       "endpoint": "planningApi",
-      "actionCount": 37,
+      "actionCount": 165,
       "region": "us-central1",
       "enforceAppCheck": true,
       "timeoutSeconds": 120,
@@ -352,14 +352,47 @@
   ],
   "actions": [
     {
+      "action": "abandonLiteraryAutocompleteApplication",
+      "endpoint": "planningApi",
+      "method": "abandonLiteraryAutocompleteApplication",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "acceptBookAsset",
       "endpoint": "mediaApi",
       "method": "accept",
       "serviceCandidates": [
+        "functions/src/bookEditorialContent.mjs",
         "functions/src/generation.mjs",
         "functions/src/restoredImageStorage.mjs"
       ],
       "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "acceptLiteraryDraftScene",
+      "endpoint": "planningApi",
+      "method": "acceptLiteraryDraftScene",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "acceptLiteraryIntegration",
+      "endpoint": "planningApi",
+      "method": "acceptLiteraryIntegration",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "acceptLiteraryReview",
+      "endpoint": "planningApi",
+      "method": "acceptLiteraryReview",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -444,6 +477,14 @@
       "consumers": [
         "src/features/campaign-session-references/services/sessionReferenceCallables.ts"
       ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "adoptLiteraryDraftScene",
+      "endpoint": "planningApi",
+      "method": "adoptLiteraryDraftScene",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -952,6 +993,113 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "advanceLiteraryDraft",
+      "endpoint": "generationApi",
+      "method": "advanceLiteraryDraft",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryImpact",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryImpact",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": [
+        "src/features/literary-production/model/impact.ts",
+        "src/features/literary-production/services/literaryImpactService.ts",
+        "src/features/literary-production/services/literaryImpactStorage.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryIntegration",
+      "endpoint": "generationApi",
+      "method": "advanceLiteraryIntegration",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryIntegrationRecheck",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryIntegrationRecheck",
+      "serviceCandidates": ["functions/src/literaryIntegrationRecheck.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryIntegrationRecheckService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryMilestone",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryMilestone",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryPassageInspection",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryPassageInspection",
+      "serviceCandidates": ["functions/src/literaryPassageInspection.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryPassageInspectionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryPublication",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryPublication",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryPublicationGuide",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryPublicationGuide",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryReview",
+      "endpoint": "generationApi",
+      "method": "advanceLiteraryReview",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryReviewedVersion",
+      "endpoint": "planningApi",
+      "method": "advanceLiteraryReviewedVersion",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiterarySequence",
+      "endpoint": "generationApi",
+      "method": "advanceLiterarySequence",
+      "serviceCandidates": ["functions/src/literarySequenceDriver.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryRecoveryStorage.ts",
+        "src/features/literary-production/services/literarySequenceService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "advanceLiteraryWorkflow",
+      "endpoint": "generationApi",
+      "method": "advanceLiteraryWorkflow",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "advanceUniverseLoreImport",
       "endpoint": "universeImportAnalysisApi",
       "method": "advanceUniverseLoreImport",
@@ -1015,6 +1163,22 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "applyLiteraryAutocomplete",
+      "endpoint": "planningApi",
+      "method": "applyLiteraryAutocomplete",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "applyLiteraryProse",
+      "endpoint": "planningApi",
+      "method": "applyLiteraryProse",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "applyLoreAnalysis",
       "endpoint": "loreApi",
       "method": "applyLoreAnalysis",
@@ -1068,8 +1232,21 @@
       "endpoint": "booksApi",
       "method": "quote",
       "serviceCandidates": [
+        "functions/src/bookEditorialDecisionCapture.mjs",
+        "functions/src/bookEditorialGenerationCapture.mjs",
+        "functions/src/bookEditorialIntegrationCapture.mjs",
+        "functions/src/bookEditorialPreparationCapture.mjs",
+        "functions/src/bookEditorialProseCapture.mjs",
+        "functions/src/bookEditorialProtocol.mjs",
+        "functions/src/bookEditorialPublicationCapture.mjs",
         "functions/src/generation.mjs",
-        "functions/src/loreAnalysis.mjs",
+        "functions/src/literaryAI.mjs",
+        "functions/src/literaryGateProtocol.mjs",
+        "functions/src/literaryIntegration.mjs",
+        "functions/src/literaryIntegrationProtocol.mjs",
+        "functions/src/literaryProseProtocol.mjs",
+        "functions/src/literaryReaderGuideProtocol.mjs",
+        "functions/src/loreClaimProtocol.mjs",
         "functions/src/visibleWordCount.mjs"
       ],
       "consumers": ["src/features/ai-assistant/services/bookGenerationService.ts"],
@@ -1170,11 +1347,163 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "cancelLiteraryAutocomplete",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryAutocomplete",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryDraft",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryDraft",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryImpact",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryImpact",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": [
+        "src/features/literary-production/hooks/useLiteraryImpact.ts",
+        "src/features/literary-production/model/impact.ts",
+        "src/features/literary-production/services/literaryImpactService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryImpactOperation",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryImpactOperation",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryIntegration",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryIntegration",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryIntegrationRecheck",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryIntegrationRecheck",
+      "serviceCandidates": ["functions/src/literaryIntegrationRecheck.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryIntegrationRecheckService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryMilestone",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryMilestone",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryPassageInspection",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryPassageInspection",
+      "serviceCandidates": ["functions/src/literaryPassageInspection.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryPassageInspectionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryProposal",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryProposal",
+      "serviceCandidates": ["functions/src/literaryAI.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProposalService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryProse",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryProse",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryPublication",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryPublication",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelLiteraryReview",
+      "endpoint": "planningApi",
+      "method": "cancelLiteraryReview",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelPendingLiteraryIntegrationAnalysis",
+      "endpoint": "planningApi",
+      "method": "cancelPendingLiteraryIntegrationAnalysis",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "cancelPendingLiteraryReviewAnalysis",
+      "endpoint": "planningApi",
+      "method": "cancelPendingLiteraryReviewAnalysis",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "cancelUniverseLoreImport",
       "endpoint": "universeImportApi",
       "method": "cancelUniverseLoreImport",
       "serviceCandidates": ["functions/src/universeLoreImport.mjs"],
       "consumers": ["src/features/universes/services/loreImportService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "checkLiteraryWritingContext",
+      "endpoint": "planningApi",
+      "method": "checkLiteraryWritingContext",
+      "serviceCandidates": ["functions/src/literaryWritingContext.mjs"],
+      "consumers": [],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "completeLiteraryAutocomplete",
+      "endpoint": "planningApi",
+      "method": "completeLiteraryAutocomplete",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "confirmLiteraryFindingCorrection",
+      "endpoint": "planningApi",
+      "method": "confirmLiteraryFindingCorrection",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "confirmLiteraryPublication",
+      "endpoint": "planningApi",
+      "method": "confirmLiteraryPublication",
+      "serviceCandidates": ["functions/src/literaryPublicationConfirmation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -1717,6 +2046,22 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "getBookEditorialCaptureCatalog",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookEditorialCaptureCatalog",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getBookEditorialCaptureSource",
+      "endpoint": "bookPortabilityApi",
+      "method": "getBookEditorialCaptureSource",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "getBookLoreEditRecovery",
       "endpoint": "loreApi",
       "method": "getBookLoreEditRecovery",
@@ -1883,6 +2228,346 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "getLiteraryAutocomplete",
+      "endpoint": "planningApi",
+      "method": "getLiteraryAutocomplete",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryAutocompleteApplication",
+      "endpoint": "planningApi",
+      "method": "getLiteraryAutocompleteApplication",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryContract",
+      "endpoint": "planningApi",
+      "method": "getLiteraryContract",
+      "serviceCandidates": ["functions/src/literaryProduction.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProductionService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryContractVersion",
+      "endpoint": "planningApi",
+      "method": "getLiteraryContractVersion",
+      "serviceCandidates": ["functions/src/literaryProduction.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProductionService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryDraft",
+      "endpoint": "planningApi",
+      "method": "getLiteraryDraft",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryFindingContext",
+      "endpoint": "planningApi",
+      "method": "getLiteraryFindingContext",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryFindingDecision",
+      "endpoint": "planningApi",
+      "method": "getLiteraryFindingDecision",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryFindingDecisionVersion",
+      "endpoint": "planningApi",
+      "method": "getLiteraryFindingDecisionVersion",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryImpact",
+      "endpoint": "planningApi",
+      "method": "getLiteraryImpact",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryImpactOperation",
+      "endpoint": "planningApi",
+      "method": "getLiteraryImpactOperation",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryImpactScope",
+      "endpoint": "planningApi",
+      "method": "getLiteraryImpactScope",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryIntegration",
+      "endpoint": "planningApi",
+      "method": "getLiteraryIntegration",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryIntegrationRecheck",
+      "endpoint": "planningApi",
+      "method": "getLiteraryIntegrationRecheck",
+      "serviceCandidates": ["functions/src/literaryIntegrationRecheck.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryIntegrationRecheckService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryIntegrationResult",
+      "endpoint": "planningApi",
+      "method": "getLiteraryIntegrationResult",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryIntegrationSetup",
+      "endpoint": "planningApi",
+      "method": "getLiteraryIntegrationSetup",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryMilestone",
+      "endpoint": "planningApi",
+      "method": "getLiteraryMilestone",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryOperation",
+      "endpoint": "planningApi",
+      "method": "getLiteraryOperation",
+      "serviceCandidates": ["functions/src/literaryProduction.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProductionService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPassageInspection",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPassageInspection",
+      "serviceCandidates": ["functions/src/literaryPassageInspection.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryPassageInspectionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPassageInspectionScope",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPassageInspectionScope",
+      "serviceCandidates": ["functions/src/literaryPassageInspection.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryPassageInspectionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPlan",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPlan",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPlanVersion",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPlanVersion",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPreparationContext",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPreparationContext",
+      "serviceCandidates": ["functions/src/literaryPreparation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPreparationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPreparationGate",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPreparationGate",
+      "serviceCandidates": ["functions/src/literaryPreparation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPreparationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryProgressArtifact",
+      "endpoint": "planningApi",
+      "method": "getLiteraryProgressArtifact",
+      "serviceCandidates": ["functions/src/literaryProgress.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryProposal",
+      "endpoint": "planningApi",
+      "method": "getLiteraryProposal",
+      "serviceCandidates": ["functions/src/literaryAI.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProposalService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryProse",
+      "endpoint": "planningApi",
+      "method": "getLiteraryProse",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryProseApplication",
+      "endpoint": "planningApi",
+      "method": "getLiteraryProseApplication",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryProseSourceInfo",
+      "endpoint": "planningApi",
+      "method": "getLiteraryProseSourceInfo",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPublication",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPublication",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPublicationChapter",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPublicationChapter",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPublicationConfirmation",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPublicationConfirmation",
+      "serviceCandidates": ["functions/src/literaryPublicationConfirmation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPublicationGuideEntry",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPublicationGuideEntry",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryPublicationGuideVersion",
+      "endpoint": "planningApi",
+      "method": "getLiteraryPublicationGuideVersion",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryReview",
+      "endpoint": "planningApi",
+      "method": "getLiteraryReview",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiterarySequence",
+      "endpoint": "planningApi",
+      "method": "getLiterarySequence",
+      "serviceCandidates": [
+        "functions/src/literarySequence.mjs",
+        "functions/src/literarySequenceDriver.mjs"
+      ],
+      "consumers": ["src/features/literary-production/services/literarySequenceService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiterarySequenceOperation",
+      "endpoint": "planningApi",
+      "method": "getLiterarySequenceOperation",
+      "serviceCandidates": ["functions/src/literarySequenceDriver.mjs"],
+      "consumers": ["src/features/literary-production/services/literarySequenceService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiterarySequenceScope",
+      "endpoint": "planningApi",
+      "method": "getLiterarySequenceScope",
+      "serviceCandidates": [
+        "functions/src/literarySequence.mjs",
+        "functions/src/literarySequenceDriver.mjs"
+      ],
+      "consumers": ["src/features/literary-production/services/literarySequenceService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryWorkflow",
+      "endpoint": "planningApi",
+      "method": "getLiteraryWorkflow",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryWorkflowScope",
+      "endpoint": "planningApi",
+      "method": "getLiteraryWorkflowScope",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLiteraryWritingContext",
+      "endpoint": "planningApi",
+      "method": "getLiteraryWritingContext",
+      "serviceCandidates": ["functions/src/literaryWritingContext.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWritingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "getLoreAnalysisEditorialContext",
+      "endpoint": "loreApi",
+      "method": "getLoreAnalysisEditorialContext",
+      "serviceCandidates": ["functions/src/loreAnalysis.mjs"],
+      "consumers": ["src/features/lore/services/loreAnalysisService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "getNarrativeContext",
       "endpoint": "planningApi",
       "method": "getNarrativeContext",
@@ -1976,6 +2661,14 @@
       "method": "getWorkVersionSource",
       "serviceCandidates": ["functions/src/workHistory.mjs"],
       "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "inspectBookEditorialCaptureRecord",
+      "endpoint": "bookPortabilityApi",
+      "method": "inspectBookEditorialCaptureRecord",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2113,6 +2806,14 @@
       "method": "listBookBackupStructure",
       "serviceCandidates": ["functions/src/bookBackupRead.mjs"],
       "consumers": ["src/features/book-portability/services/bookStructureCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listBookEditorialCaptureRecords",
+      "endpoint": "bookPortabilityApi",
+      "method": "listBookEditorialCaptureRecords",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2286,15 +2987,227 @@
       "serviceCandidates": [
         "functions/src/adventureImport.mjs",
         "functions/src/adventureRestoreTransfer.mjs",
+        "functions/src/bookEditorialIntegrationCapture.mjs",
+        "functions/src/bookEditorialProtocol.mjs",
         "functions/src/bookRestoreUpload.mjs",
         "functions/src/campaignBackupAttestation.mjs",
         "functions/src/campaignBackupAudit.mjs",
         "functions/src/chapterChat.mjs",
         "functions/src/editorChatContracts.mjs",
         "functions/src/imageLibrary.mjs",
+        "functions/src/literaryGenerationDependencies.mjs",
+        "functions/src/literaryReaderGuideProtocol.mjs",
         "functions/src/visibleWordCount.mjs"
       ],
       "consumers": ["src/features/image-library/services/imageLibraryService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryArchitectureInventory",
+      "endpoint": "planningApi",
+      "method": "listLiteraryArchitectureInventory",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryContractVersions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryContractVersions",
+      "serviceCandidates": ["functions/src/literaryProduction.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProductionService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryDrafts",
+      "endpoint": "planningApi",
+      "method": "listLiteraryDrafts",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryFindingDecisionVersions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryFindingDecisionVersions",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryFindingDecisions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryFindingDecisions",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryImpacts",
+      "endpoint": "planningApi",
+      "method": "listLiteraryImpacts",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryIntegrationResults",
+      "endpoint": "planningApi",
+      "method": "listLiteraryIntegrationResults",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryIntegrations",
+      "endpoint": "planningApi",
+      "method": "listLiteraryIntegrations",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryMilestoneVersions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryMilestoneVersions",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryMilestones",
+      "endpoint": "planningApi",
+      "method": "listLiteraryMilestones",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPlanVersions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPlanVersions",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPlans",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPlans",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPreparationGateVersions",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPreparationGateVersions",
+      "serviceCandidates": ["functions/src/literaryPreparation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPreparationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryProgressArtifacts",
+      "endpoint": "planningApi",
+      "method": "listLiteraryProgressArtifacts",
+      "serviceCandidates": ["functions/src/literaryProgress.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryProposals",
+      "endpoint": "planningApi",
+      "method": "listLiteraryProposals",
+      "serviceCandidates": ["functions/src/literaryAI.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProposalService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryProse",
+      "endpoint": "planningApi",
+      "method": "listLiteraryProse",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPublicationGuide",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPublicationGuide",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPublicationManifest",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPublicationManifest",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPublicationRemovals",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPublicationRemovals",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryPublications",
+      "endpoint": "planningApi",
+      "method": "listLiteraryPublications",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryReferences",
+      "endpoint": "planningApi",
+      "method": "listLiteraryReferences",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryReviewAnalyses",
+      "endpoint": "planningApi",
+      "method": "listLiteraryReviewAnalyses",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryReviews",
+      "endpoint": "planningApi",
+      "method": "listLiteraryReviews",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiterarySequences",
+      "endpoint": "planningApi",
+      "method": "listLiterarySequences",
+      "serviceCandidates": ["functions/src/literarySequenceDriver.mjs"],
+      "consumers": ["src/features/literary-production/services/literarySequenceService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryVolumeBooks",
+      "endpoint": "planningApi",
+      "method": "listLiteraryVolumeBooks",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "listLiteraryWorkflows",
+      "endpoint": "planningApi",
+      "method": "listLiteraryWorkflows",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2528,6 +3441,14 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "prepareLiteraryAutocomplete",
+      "endpoint": "generationApi",
+      "method": "prepareLiteraryAutocomplete",
+      "serviceCandidates": ["functions/src/literaryAutocomplete.mjs"],
+      "consumers": ["src/features/ai-assistant/services/literaryAutocompleteService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "prepareStudioBooks",
       "endpoint": "booksApi",
       "method": "prepareStudioBooks",
@@ -2544,6 +3465,14 @@
         "src/features/books/services/legacyChapterService.ts",
         "src/features/work-progress/services/workProgressService.ts"
       ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "previewLiteraryArchitectureSource",
+      "endpoint": "planningApi",
+      "method": "previewLiteraryArchitectureSource",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2664,6 +3593,14 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "readBookEditorialCaptureRecord",
+      "endpoint": "bookPortabilityApi",
+      "method": "readBookEditorialCaptureRecord",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "readBookLorePart",
       "endpoint": "loreApi",
       "method": "readBookLorePart",
@@ -2742,6 +3679,22 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "readLiteraryBookMapPage",
+      "endpoint": "planningApi",
+      "method": "readLiteraryBookMapPage",
+      "serviceCandidates": ["functions/src/literaryBookMap.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryBookMapService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "readLiteraryImpactPage",
+      "endpoint": "planningApi",
+      "method": "readLiteraryImpactPage",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryImpactService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "readSceneAssembly",
       "endpoint": "planningApi",
       "method": "readSceneAssembly",
@@ -2782,6 +3735,14 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "recheckLiteraryMilestone",
+      "endpoint": "planningApi",
+      "method": "recheckLiteraryMilestone",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": [],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "recordWorkActivity",
       "endpoint": "workApi",
       "method": "recordWorkActivity",
@@ -2795,6 +3756,14 @@
       "method": "recoverOrphanScene",
       "serviceCandidates": ["functions/src/scenes.mjs"],
       "consumers": ["src/features/scenes/services/sceneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "regenerateLiteraryDraftScene",
+      "endpoint": "planningApi",
+      "method": "regenerateLiteraryDraftScene",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2829,6 +3798,14 @@
       "method": "rename",
       "serviceCandidates": ["functions/src/imageLibrary.mjs"],
       "consumers": ["src/features/image-library/services/imageLibraryService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "reopenLiteraryPublicationGuide",
+      "endpoint": "planningApi",
+      "method": "reopenLiteraryPublicationGuide",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -2986,11 +3963,31 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "resolveLiteraryImpact",
+      "endpoint": "planningApi",
+      "method": "resolveLiteraryImpact",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": [
+        "src/features/literary-production/model/impact.ts",
+        "src/features/literary-production/services/literaryImpactService.ts",
+        "src/features/literary-production/services/literaryImpactStorage.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "resolveWorkResume",
       "endpoint": "workApi",
       "method": "resolveWorkResume",
       "serviceCandidates": ["functions/src/workProgress.mjs"],
       "consumers": ["src/features/work-progress/services/workProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "restartLiteraryDraftPreservation",
+      "endpoint": "planningApi",
+      "method": "restartLiteraryDraftPreservation",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -3007,6 +4004,14 @@
       "method": "restoreWorkVersion",
       "serviceCandidates": ["functions/src/workHistory.mjs"],
       "consumers": ["src/features/manuscript-history/services/workHistoryCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "resumeLiterarySequenceOperation",
+      "endpoint": "generationApi",
+      "method": "resumeLiterarySequenceOperation",
+      "serviceCandidates": ["functions/src/literarySequenceDriver.mjs"],
+      "consumers": ["src/features/literary-production/services/literarySequenceService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -3036,6 +4041,22 @@
         "src/features/book-portability/services/bookRestoreEffectCallables.ts",
         "src/features/book-portability/services/bookRestoreEffectSession.ts"
       ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "retryLiteraryIntegrationAnalysis",
+      "endpoint": "planningApi",
+      "method": "retryLiteraryIntegrationAnalysis",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "retryLiteraryReviewAnalysis",
+      "endpoint": "planningApi",
+      "method": "retryLiteraryReviewAnalysis",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -3120,6 +4141,54 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "saveLiteraryContract",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryContract",
+      "serviceCandidates": ["functions/src/literaryProduction.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProductionService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLiteraryFindingDecision",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryFindingDecision",
+      "serviceCandidates": ["functions/src/literaryFindings.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryFindingService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLiteraryPlan",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryPlan",
+      "serviceCandidates": ["functions/src/literaryPlanning.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPlanningService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLiteraryPreparationGate",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryPreparationGate",
+      "serviceCandidates": ["functions/src/literaryPreparation.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPreparationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLiteraryProgressNote",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryProgressNote",
+      "serviceCandidates": ["functions/src/literaryProgress.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProgressService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "saveLiteraryPublicationGuideEntry",
+      "endpoint": "planningApi",
+      "method": "saveLiteraryPublicationGuideEntry",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "saveUniverseLore",
       "endpoint": "loreApi",
       "method": "saveUniverseLore",
@@ -3163,6 +4232,36 @@
         "src/features/adventure-blocks/services/adventureBlockRecovery.ts",
         "src/features/adventure-blocks/services/adventurePreviewCallables.ts"
       ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setLiteraryDraftExecution",
+      "endpoint": "planningApi",
+      "method": "setLiteraryDraftExecution",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setLiterarySequenceControl",
+      "endpoint": "planningApi",
+      "method": "setLiterarySequenceControl",
+      "serviceCandidates": [
+        "functions/src/literarySequence.mjs",
+        "functions/src/literarySequenceDriver.mjs"
+      ],
+      "consumers": [
+        "src/features/literary-production/services/literaryRecoveryStorage.ts",
+        "src/features/literary-production/services/literarySequenceService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "setLiteraryWorkflowControl",
+      "endpoint": "planningApi",
+      "method": "setLiteraryWorkflowControl",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
@@ -3279,6 +4378,125 @@
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     },
     {
+      "action": "startLiteraryDraft",
+      "endpoint": "planningApi",
+      "method": "startLiteraryDraft",
+      "serviceCandidates": ["functions/src/literaryDrafting.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryDraftService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryImpact",
+      "endpoint": "planningApi",
+      "method": "startLiteraryImpact",
+      "serviceCandidates": ["functions/src/literaryImpact.mjs"],
+      "consumers": [
+        "src/features/literary-production/hooks/useLiteraryImpact.ts",
+        "src/features/literary-production/model/impact.ts",
+        "src/features/literary-production/services/literaryImpactService.ts",
+        "src/features/literary-production/services/literaryImpactStorage.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryIntegration",
+      "endpoint": "planningApi",
+      "method": "startLiteraryIntegration",
+      "serviceCandidates": ["functions/src/literaryIntegration.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryIntegrationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryIntegrationRecheck",
+      "endpoint": "planningApi",
+      "method": "startLiteraryIntegrationRecheck",
+      "serviceCandidates": ["functions/src/literaryIntegrationRecheck.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryIntegrationRecheckService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryMilestone",
+      "endpoint": "planningApi",
+      "method": "startLiteraryMilestone",
+      "serviceCandidates": ["functions/src/literaryMilestones.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryMilestoneService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryPassageInspection",
+      "endpoint": "planningApi",
+      "method": "startLiteraryPassageInspection",
+      "serviceCandidates": ["functions/src/literaryPassageInspection.mjs"],
+      "consumers": [
+        "src/features/literary-production/services/literaryPassageInspectionService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryProposal",
+      "endpoint": "generationApi",
+      "method": "startLiteraryProposal",
+      "serviceCandidates": ["functions/src/literaryAI.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProposalService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryProse",
+      "endpoint": "generationApi",
+      "method": "startLiteraryProse",
+      "serviceCandidates": ["functions/src/literaryProse.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryProseService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryPublication",
+      "endpoint": "planningApi",
+      "method": "startLiteraryPublication",
+      "serviceCandidates": ["functions/src/literaryPublication.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryPublicationGuideVerification",
+      "endpoint": "planningApi",
+      "method": "startLiteraryPublicationGuideVerification",
+      "serviceCandidates": ["functions/src/literaryPublicationGuide.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryPublicationService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryReview",
+      "endpoint": "planningApi",
+      "method": "startLiteraryReview",
+      "serviceCandidates": ["functions/src/literaryReview.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryReviewService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiterarySequence",
+      "endpoint": "planningApi",
+      "method": "startLiterarySequence",
+      "serviceCandidates": [
+        "functions/src/literarySequence.mjs",
+        "functions/src/literarySequenceDriver.mjs"
+      ],
+      "consumers": [
+        "src/features/literary-production/services/literaryRecoveryStorage.ts",
+        "src/features/literary-production/services/literarySequenceService.ts"
+      ],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "startLiteraryWorkflow",
+      "endpoint": "planningApi",
+      "method": "startLiteraryWorkflow",
+      "serviceCandidates": ["functions/src/literaryWorkflow.mjs"],
+      "consumers": ["src/features/literary-production/services/literaryWorkflowService.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
       "action": "startUniverseLoreImport",
       "endpoint": "universeImportApi",
       "method": "startUniverseLoreImport",
@@ -3381,6 +4599,22 @@
       "method": "verifyBookBackupCover",
       "serviceCandidates": ["functions/src/bookBackupCoverRead.mjs"],
       "consumers": ["src/features/book-portability/services/bookCoverCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "verifyBookEditorialCaptureRecord",
+      "endpoint": "bookPortabilityApi",
+      "method": "verifyBookEditorialCaptureRecord",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
+      "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
+    },
+    {
+      "action": "verifyBookEditorialCaptureSource",
+      "endpoint": "bookPortabilityApi",
+      "method": "verifyBookEditorialCaptureSource",
+      "serviceCandidates": ["functions/src/bookEditorialCapture.mjs"],
+      "consumers": ["src/features/book-portability/services/bookEditorialCallables.ts"],
       "headers": "Functions SDK + existing method-specific setters in functions/src/index.mjs; sector defaults to private/no-store"
     }
   ]

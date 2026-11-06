@@ -1,4 +1,8 @@
 import type { ChatGeneration, ChatGenerationRequest } from './chatGeneration.mjs';
+import type {
+  LiteraryWritingManifest,
+  LiteraryWritingSnapshot,
+} from './literaryWritingProtocol.mjs';
 export type EditorChatId = string;
 export type EditorChatHash = string;
 export type EditorChatTarget = { kind: 'book' | 'adventure'; id: string };
@@ -33,6 +37,7 @@ export type EditorChatPersonaComplement = {
 export type EditorChatPersonaBindingValue =
   { personaId: string | null } | { personaComplement: EditorChatPersonaComplement | null };
 export type EditorChatLeaf =
+  | { kind: 'literary'; ownerId: string; manifest: LiteraryWritingManifest }
   | ({ kind: 'target'; projectToken: string; resourceToken: string } & EditorChatScope)
   | {
       kind: 'lore';
@@ -140,6 +145,7 @@ export type EditorChatPersonaSnapshot = {
   instruction: string;
 };
 export type EditorChatFrozenContext = {
+  literary?: LiteraryWritingSnapshot | null;
   schemaVersion: 1;
   matcherVersion: 1;
   capturedAt: number;
@@ -356,7 +362,12 @@ type Attempt = Turn & { attemptToken: string };
 type Page = { limit?: number; cursor?: string };
 export interface EditorChatRequestFields {
   prepareContext: EditorChatScope &
-    Op & { contextId: string; base: EditorChatBase; capture: EditorChatCapture };
+    Op & {
+      contextId: string;
+      base: EditorChatBase;
+      capture: EditorChatCapture;
+      literaryPlanIds?: string[];
+    };
   advanceContext: EditorChatScope & Op & Context & { expectedRevision: number };
   getContext: EditorChatScope & Context;
   inspectContext: EditorChatScope & Context & { expectedRevision: number };

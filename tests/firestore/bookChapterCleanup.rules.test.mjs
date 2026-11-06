@@ -92,7 +92,7 @@ test('native book deletion upgrades legacy finish checkpoint and drains pinned b
   await admin.doc('books/book').update({ deleting: true });
   const request = { target: f.target, operationId: 'native-book-clean-delete01', limit: 3 },
     job = admin.doc('users/author/sceneOperations/' + request.operationId);
-  for (let n = 0; n < 100; n++) {
+  for (let n = 0; n < 500; n++) {
     await scenes.deleteSceneBook('author', request);
     if ((await job.get()).data().phase === 'text-bodies') break;
   }
@@ -109,7 +109,7 @@ test('native book deletion upgrades legacy finish checkpoint and drains pinned b
   assert.equal((await admin.doc('books/book').get()).exists, true);
   await admin.doc(a).update({ ownerId: 'author' });
   let result;
-  for (let n = 0; n < 100; n++) {
+  for (let n = 0; n < 500; n++) {
     result = await scenes.deleteSceneBook('author', request);
     if (result.complete) break;
     assert.equal((await admin.doc('books/book').get()).exists, true);

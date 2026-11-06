@@ -85,6 +85,8 @@ describe('serviço do chat', () => {
         .mockResolvedValueOnce({
           data: {
             generation: resolveChatGeneration(generation),
+            messageInstance: 'instance',
+            generationAttempt: 'attempt',
             input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
           },
         })
@@ -129,6 +131,8 @@ describe('serviço do chat', () => {
         .mockResolvedValueOnce({
           data: {
             generation: resolveChatGeneration(generation),
+            messageInstance: 'instance',
+            generationAttempt: 'attempt',
             input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
           },
         })
@@ -180,7 +184,11 @@ describe('serviço do chat', () => {
     expect(fetch).not.toHaveBeenCalled();
     mocks.call
       .mockResolvedValueOnce({
-        data: { input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] } },
+        data: {
+          messageInstance: 'instance',
+          generationAttempt: 'attempt',
+          input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
+        },
       })
       .mockResolvedValueOnce({ data: {} });
     await expect(
@@ -195,6 +203,8 @@ describe('serviço do chat', () => {
     expect(mocks.call).toHaveBeenLastCalledWith({
       ...identity,
       action: 'failBYOK',
+      messageInstance: 'instance',
+      generationAttempt: 'attempt',
       requestId: 'pending',
     });
   });
@@ -293,6 +303,8 @@ describe('serviço do chat', () => {
         .mockResolvedValueOnce({
           data: {
             state: 'running',
+            messageInstance: 'instance',
+            generationAttempt: 'attempt',
             input: {
               context,
               text: 'Pedido',
@@ -326,6 +338,8 @@ describe('serviço do chat', () => {
       expect(mocks.call).toHaveBeenLastCalledWith({
         ...identity,
         action: 'completeBYOK',
+        messageInstance: 'instance',
+        generationAttempt: 'attempt',
         requestId: 'request',
         output: 'Cena',
       });
@@ -345,5 +359,165 @@ it('captura o modelo selecionado e raciocínio da plataforma sem usar o modelo a
     provider: 'platform',
     model: 'gemini-4-argon',
     reasoning: 'high',
+  });
+});
+
+describe('retomada de mutações de conversa', () => {
+  it('continua páginas com a identidade original e sem reenviar o texto de edição', async () => {
+    mocks.call
+      .mockResolvedValueOnce({
+        data: {
+          mutation: {
+            id: 'edit-op',
+            conversationId: 'conversation',
+            kind: 'edit',
+            state: 'running',
+            deletedDocuments: 200,
+          },
+        },
+      })
+      .mockResolvedValueOnce({
+        data: {
+          mutation: {
+            id: 'edit-op',
+            conversationId: 'conversation',
+            kind: 'edit',
+            state: 'running',
+            deletedDocuments: 400,
+          },
+        },
+      })
+      .mockResolvedValueOnce({ data: {} });
+    expect(
+      await chapterChatCall(identity, {
+        action: 'edit',
+        mutationId: 'edit-op',
+        before: 1,
+        draft: 'Pedido privado',
+      }),
+    ).toEqual({});
+    expect(mocks.call).toHaveBeenNthCalledWith(2, {
+      ...identity,
+      action: 'resumeMutation',
+      mutationId: 'edit-op',
+    });
+    expect(mocks.call).toHaveBeenNthCalledWith(3, {
+      ...identity,
+      action: 'resumeMutation',
+      mutationId: 'edit-op',
+    });
+    expect(JSON.stringify(mocks.call.mock.calls.slice(1))).not.toContain('Pedido privado');
+  });
+  it('retoma uma operação observada no carregamento e então carrega o estado final', async () => {
+    const pending = {
+      id: 'delete-op',
+      conversationId: 'conversation',
+      kind: 'delete',
+      state: 'running',
+      deletedDocuments: 0,
+    };
+    const page = { conversations: [], conversation: null, messages: [], before: null };
+    mocks.call
+      .mockResolvedValueOnce({ data: { ...page, pendingMutation: pending } })
+      .mockResolvedValueOnce({ data: {} })
+      .mockResolvedValueOnce({ data: page });
+    expect(await loadChapterChat(identity)).toEqual(page);
+    expect(mocks.call).toHaveBeenNthCalledWith(2, {
+      ...identity,
+      action: 'resumeMutation',
+      mutationId: 'delete-op',
+    });
+    expect(mocks.call).toHaveBeenNthCalledWith(3, { ...identity, action: 'load' });
+  });
+  it('não inicia uma nova identidade ao observar uma página sem progresso', async () => {
+    const pending = {
+      id: 'delete-op',
+      conversationId: 'conversation',
+      kind: 'delete',
+      state: 'running',
+      deletedDocuments: 200,
+    };
+    mocks.call.mockResolvedValue({ data: { mutation: pending } });
+    await expect(
+      chapterChatCall(identity, { action: 'delete', mutationId: 'delete-op' }),
+    ).rejects.toThrow(/pendente/);
+    expect(mocks.call).toHaveBeenCalledTimes(2);
+    expect(mocks.call).toHaveBeenLastCalledWith({
+      ...identity,
+      action: 'resumeMutation',
+      mutationId: 'delete-op',
+    });
+  });
+});
+
+describe('vínculo das tentativas BYOK', () => {
+  it('não chama o provedor nem confirma uma resposta sem tentativa recebida do servidor', async () => {
+    vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+      provider: 'openai_byok',
+      openaiApiKey: 'fake-key',
+      geminiApiKey: '',
+      customModel: 'gpt-4o-mini',
+    });
+    mocks.call.mockResolvedValueOnce({
+      data: { input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] } },
+    });
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await expect(
+      sendChapterChat(
+        identity,
+        {
+          requestId: 'request',
+          messageInstance: 'instance',
+          text: 'Pedido',
+          context,
+          generation: {
+            version: 1,
+            provider: 'openai_byok',
+            model: 'gpt-4o-mini',
+            reasoning: 'auto',
+          },
+        },
+        vi.fn(),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(/tentativa/);
+    expect(fetch).not.toHaveBeenCalled();
+    expect(mocks.call).toHaveBeenCalledTimes(1);
+  });
+  it('recusa uma instância divergente antes de enviar texto ou chave ao provedor', async () => {
+    vi.spyOn(byok, 'getBYOKConfig').mockReturnValue({
+      provider: 'openai_byok',
+      openaiApiKey: 'fake-key',
+      geminiApiKey: '',
+      customModel: 'gpt-4o-mini',
+    });
+    mocks.call.mockResolvedValueOnce({
+      data: {
+        messageInstance: 'other-instance',
+        generationAttempt: 'attempt',
+        input: { context, text: 'Pedido', systemInstruction: 'Sistema', history: [] },
+      },
+    });
+    const fetch = vi.spyOn(globalThis, 'fetch');
+    await expect(
+      sendChapterChat(
+        identity,
+        {
+          requestId: 'request',
+          messageInstance: 'instance',
+          text: 'Pedido',
+          context,
+          generation: {
+            version: 1,
+            provider: 'openai_byok',
+            model: 'gpt-4o-mini',
+            reasoning: 'auto',
+          },
+        },
+        vi.fn(),
+        new AbortController().signal,
+      ),
+    ).rejects.toThrow(/tentativa/);
+    expect(fetch).not.toHaveBeenCalled();
   });
 });

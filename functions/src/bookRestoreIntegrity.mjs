@@ -182,7 +182,7 @@ export function createBookRestoreIntegrityService({
 export async function prepareBookRestoreIntegrityCleanup(tx, db, loaded, limit) {
   const job = loaded.job;
   if (
-    ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(job.cleanupVersion) ||
+    ![2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(job.cleanupVersion) ||
     !['proofs', 'state'].includes(job.cleanupPhase)
   )
     inconsistent();

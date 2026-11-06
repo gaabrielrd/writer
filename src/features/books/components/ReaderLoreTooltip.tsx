@@ -32,7 +32,11 @@ export function ReaderLoreTooltip({
   return (
     <span
       className={styles.loreTerm}
-      onMouseEnter={() => setOpen(true)}
+      onMouseEnter={() => {
+        // Touch browsers can synthesize mouse entry after a tap or viewport change.
+        // Keep focus/tap explicit; a synthetic hover must not reopen after Escape.
+        if (!window.matchMedia('(any-hover: none)').matches) setOpen(true);
+      }}
       onMouseLeave={() => setOpen(false)}
     >
       <Button
@@ -51,6 +55,8 @@ export function ReaderLoreTooltip({
       {open && (
         <span className={styles.tooltip} role="tooltip" id={id}>
           <strong>{entity.name}</strong>
+          {entity.disambiguation && <span>{entity.disambiguation}</span>}
+          {entity.certainty === 'uncertain' && <span>Informação incerta</span>}
           <span className={styles.category}>{CATEGORY_LABELS[entity.category]}</span>
           <span>{entity.summary}</span>
         </span>

@@ -83,3 +83,46 @@ describe('análise estruturada', () => {
     ).toEqual(['local', 'global']);
   });
 });
+
+it('preserves field-level interpretation metadata without relabeling it as an observed fact', () => {
+  const source = 'Arthur suspeita da carta.';
+  const entity = {
+    name: 'Arthur',
+    category: 'character',
+    summary: source,
+    details: '',
+    aliases: [],
+    evidence: source,
+    claims: {
+      version: 1,
+      items: [
+        {
+          field: 'summary',
+          text: source,
+          kind: 'interpretation',
+          evidence: source,
+          rationale: 'A motivação permanece incerta.',
+        },
+      ],
+    },
+  };
+  expect(
+    parseDetectedLore(JSON.stringify({ entities: [entity] }), source)[0]?.claims?.items[0]?.kind,
+  ).toBe('interpretation');
+  expect(() =>
+    parseDetectedLore(
+      JSON.stringify({
+        entities: [
+          {
+            ...entity,
+            claims: {
+              ...entity.claims,
+              items: [{ ...entity.claims.items[0], evidence: 'Fato ausente.' }],
+            },
+          },
+        ],
+      }),
+      source,
+    ),
+  ).toThrow();
+});

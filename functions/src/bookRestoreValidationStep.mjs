@@ -80,7 +80,7 @@ async function item(source, pending) {
   return decodeBookContentJSON(bytes);
 }
 /** One bounded semantic/parser unit. All writes remain buffered until the coordinator commits. */
-export async function prepareBookValidationStep(state, source, store) {
+export async function prepareBookValidationStep(state, source, store, expectedSource = null) {
   if (!['frames', 'semantic', 'recheck'].includes(state.phase)) inconsistent();
   const machine = state.machine
     ? createBookContentMachine(state.machine, { index: store.index, hash })
@@ -195,8 +195,18 @@ export async function prepareBookValidationStep(state, source, store) {
     return;
   }
   if (step.event?.type === 'manifest') {
+    if (
+      expectedSource &&
+      (expectedSource.format !== step.event.manifest.format ||
+        expectedSource.version !== step.event.manifest.version)
+    )
+      bad();
     if (machine || state.json) bad();
-    state.machine = createBookContentState(step.event.manifest.bookId, false);
+    state.machine = createBookContentState(
+      step.event.manifest.bookId,
+      false,
+      step.event.manifest.version,
+    );
     state.parser = step.cursor;
     return;
   }
@@ -243,14 +253,18 @@ export async function prepareBookValidationStep(state, source, store) {
   }
   state.parser = step.cursor;
 }
-export function completeBookValidation(state, sourceHash, index) {
+export function completeBookValidation(state, sourceHash, index, expectedSource = null) {
   const machine = createBookContentMachine(state.machine, { index, hash }),
     summary = machine.result();
   if (
     state.phase !== 'recheck' ||
     !state.envelope ||
     summary.legacy ||
-    summary.bookId !== state.envelope.manifest.bookId
+    summary.bookId !== state.envelope.manifest.bookId ||
+    Boolean(state.machine.editorial) !== (state.envelope.manifest.version === 2) ||
+    (expectedSource &&
+      (expectedSource.format !== state.envelope.manifest.format ||
+        expectedSource.version !== state.envelope.manifest.version))
   )
     inconsistent();
   return {

@@ -75,12 +75,20 @@ it('transação real grava manuscrito e debita uma vez, com recuperação e conf
     });
     const call = (data) => service.chapterChat('author', { ...identity, ...data });
     await call({ action: 'create' });
-    await call({ action: 'send', requestId: 'request', text: '/reescrever', context });
+    const message = await call({
+      action: 'send',
+      requestId: 'request',
+      text: '/reescrever',
+      context,
+    });
     assert.equal((await db.doc('users/author').get()).data().credits, 1);
     const operation = {
       action: 'apply',
       requestId: 'accept',
       messageId: 'request',
+      messageInstance: message.messageInstance,
+      generationAttempt: message.generationAttempt,
+      suggestionHash: sha(message.suggestion ?? ''),
       expectedHash: context.target.hash,
       sourceHash: context.target.hash,
       after: '<p>Novo texto</p>',

@@ -45,6 +45,8 @@ export function createLoreAnalysisApplicationService({ db, now = () => Date.now(
         const current = await readLoreAnalysisContext(tx, db, uid, value.bookId, value.chapterId);
         if (
           value.revision !== current.revision ||
+          (value.editorialContextToken !== undefined &&
+            current.editorialContext.contextToken !== value.editorialContextToken) ||
           (current.chapterHash !== value.chapterHash && current.chapterHash !== value.contentHash)
         )
           conflict();

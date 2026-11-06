@@ -18,6 +18,8 @@ export interface Book {
   editorialState?: 'draft' | 'review' | 'ready';
   hasProgressResources?: boolean;
   hasLoreResources?: boolean;
+  hasLiteraryPublications?: boolean;
+  hasLiteraryArchiveResources?: boolean;
   wordCount: number;
   hasSceneResources?: boolean;
   sceneRevision?: number;

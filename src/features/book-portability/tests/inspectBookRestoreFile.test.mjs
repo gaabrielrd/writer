@@ -190,3 +190,27 @@ it('mutating the options object during inspection cannot replace the captured ac
     ).rejects.toThrow();
   }
 });
+
+it('editorial v2 is inspected but cannot be downgraded to a v1 upload or returned as an activatable review', async () => {
+  const records = coverRestoreFixture({ kind: 'none' });
+  records.push(
+    record('book-editorial', 'book', {
+      schemaVersion: 1,
+      bookId: 'book',
+      presence: 'captured',
+      artifacts: 0,
+      links: 0,
+    }),
+  );
+  const src = await source(records, 'book', 2),
+    bytes = await src.read(0, src.size),
+    stages = [];
+  await expect(
+    inspectBookRestoreFile(new File([bytes], 'editorial.writer'), {
+      check,
+      onStage: (stage) => stages.push(stage),
+    }),
+  ).rejects.toMatchObject({ code: 'unsupported-version' });
+  expect(stages).toEqual(['inspect']);
+  expect(mocks.indexes.every((index) => index.dispose.mock.calls.length === 1)).toBe(true);
+});

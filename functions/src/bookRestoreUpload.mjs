@@ -1,3 +1,11 @@
+import { BOOK_EDITORIAL_HISTORY_METHODS } from './bookEditorialHistoryCallable.mjs';
+import { createBookEditorialRestoreReviewCatalog } from './bookEditorialRestoreReviewCatalog.mjs';
+import { createBookEditorialRestoreReviewService } from './bookEditorialRestoreReview.mjs';
+import { createBookEditorialHistoryService } from './bookEditorialHistory.mjs';
+import { createBookRestoreEditorialAuditService } from './bookRestoreEditorialAudit.mjs';
+import { createBookRestoreEditorialHeadsService } from './bookRestoreEditorialHeads.mjs';
+import { createBookRestoreEditorialService } from './bookRestoreEditorial.mjs';
+import { prepareBookRestoreEditorialCleanup } from './bookRestoreEditorialCleanup.mjs';
 import { createBookRestoreStructureService } from './bookRestoreStructure.mjs';
 import { createBookRestoreLoreService } from './bookRestoreLore.mjs';
 import { createBookRestorePreparedLoreService } from './bookRestorePreparedLore.mjs';
@@ -68,7 +76,7 @@ import {
 } from './bookRestoreUploadContracts.mjs';
 export { createBookRestoreRecoveryHandler };
 export function setBookRestoreHeaders(method, request) {
-  if (BOOK_RESTORE_METHODS.includes(method)) {
+  if (BOOK_RESTORE_METHODS.includes(method) || BOOK_EDITORIAL_HISTORY_METHODS.includes(method)) {
     request.rawRequest?.res?.setHeader('Cache-Control', 'private, no-store');
     request.rawRequest?.res?.setHeader('Vary', 'Authorization');
   }
@@ -87,6 +95,9 @@ const actions = {
   advanceBookRestorePersonas: ['content-verified'],
   advanceBookRestoreUniverse: ['content-verified'],
   advanceBookRestoreHistory: ['content-verified'],
+  advanceBookRestoreEditorial: ['content-verified'],
+  advanceBookRestoreEditorialHeads: ['content-verified'],
+  advanceBookRestoreEditorialAudit: ['content-verified'],
   advanceBookRestoreDraft: ['content-verified'],
   finalizeBookRestoreDraft: ['content-verified'],
   advanceBookRestoreCover: ['content-verified'],
@@ -103,9 +114,12 @@ export function createBookRestoreUploadService({
   restoreAssets,
   now = Date.now,
   indexedLoreBodies = false,
+  editorialPreparation = false,
+  editorialActivation = false,
 }) {
   // Coordinated D3 rollout: existing streamed jobs always resume; enable new ones after reconciliation.
-  if (typeof indexedLoreBodies !== 'boolean') inconsistent();
+  if ([indexedLoreBodies, editorialPreparation, editorialActivation].some(value => typeof value !== 'boolean'))
+    inconsistent();
   const jobRef = (uid, id) => db.doc('users/' + uid + '/bookRestores/' + id);
   const opRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreOperations/' + id);
   const fenceRef = (uid, id) => db.doc('users/' + uid + '/bookRestoreStartFences/' + id);
@@ -282,7 +296,9 @@ export function createBookRestoreUploadService({
       r.action === 'retireBookRestoreActivation' &&
       (r.preparation?.schemaVersion !== 13 ||
         r.preparation.phase !== 'activation-ready' ||
-        r.preparation.audit?.sealOperationId !== r.operationId)
+        (Object.hasOwn(r.preparation, 'editorialAddedArtifacts')
+          ? loaded.job.cleanupVersion !== 15 || loaded.job.source.format !== 'writer-book-archive' || loaded.job.source.version !== 2
+          : r.preparation.audit?.sealOperationId !== r.operationId))
     )
       inconsistent();
     ['checkpoint', 'uploadedChunks', 'uploadedBytes', 'cleanedChunks'].forEach((k) =>
@@ -316,6 +332,7 @@ export function createBookRestoreUploadService({
           'resource-children',
           ...(loaded.job.cleanupVersion >= 13 ? ['cover-storage'] : []),
           ...(loaded.job.cleanupVersion >= 14 ? ['persona-library'] : []),
+          ...(loaded.job.cleanupVersion >= 15 ? ['editorial'] : []),
         ].includes(r.integrity.cleanupPhase)
       )
         inconsistent();
@@ -339,6 +356,7 @@ export function createBookRestoreUploadService({
           'artifactCount',
           'cleanedArtifacts',
           'retiredArtifacts',
+          'editorialAddedArtifacts',
           'actCount',
           'chapterCount',
           'wordCount',
@@ -584,7 +602,7 @@ export function createBookRestoreUploadService({
   }
   async function start(uid, input) {
     authorize(uid);
-    const request = startInput(input),
+    const request = startInput(input, true),
       id = request.operationId,
       fingerprint = requestHash('startBookRestore', request),
       bookId = targetId(uid, id, fingerprint),
@@ -612,6 +630,12 @@ export function createBookRestoreUploadService({
         return confirmed(loaded, r);
       }
       if (reserved.exists || marked.exists || root.exists) inconsistent();
+      if (
+        request.source.format === 'writer-book-archive' &&
+        request.source.version === 2 &&
+        !editorialPreparation
+      )
+        fail('failed-precondition', 'editorial-preparation-unavailable');
       const timestamp = date(now),
         record = {
           schemaVersion: 1,
@@ -873,15 +897,17 @@ export function createBookRestoreUploadService({
       if (loaded.job.cleanupPhase === 'cover-storage') return { coverStorageCleanup: true };
       if (loaded.job.cleanupVersion >= 2 && loaded.job.cleanupPhase !== 'chunks') {
         const prepared =
-          loaded.job.cleanupPhase === 'resource-children'
-            ? await prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, request.limit)
-            : loaded.job.cleanupPhase === 'body-artifacts'
-              ? await prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, request.limit)
-              : loaded.job.cleanupPhase === 'artifacts'
-                ? await prepareBookRestoreArtifactsCleanup(tx, db, loaded, request.limit)
-                : loaded.job.cleanupPhase.startsWith('validation-')
-                  ? await prepareBookRestoreValidationCleanup(tx, db, loaded, request.limit)
-                  : await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
+          loaded.job.cleanupPhase === 'editorial'
+            ? await prepareBookRestoreEditorialCleanup(tx, db, loaded, request.limit)
+            : loaded.job.cleanupPhase === 'resource-children'
+              ? await prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, request.limit)
+              : loaded.job.cleanupPhase === 'body-artifacts'
+                ? await prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, request.limit)
+                : loaded.job.cleanupPhase === 'artifacts'
+                  ? await prepareBookRestoreArtifactsCleanup(tx, db, loaded, request.limit)
+                  : loaded.job.cleanupPhase.startsWith('validation-')
+                    ? await prepareBookRestoreValidationCleanup(tx, db, loaded, request.limit)
+                    : await prepareBookRestoreIntegrityCleanup(tx, db, loaded, request.limit);
         const record = next(loaded.job, request, prepared.patch);
         for (const ref of prepared.remove) tx.delete(ref);
         tx.update(loaded.ref, record);
@@ -1224,11 +1250,42 @@ export function createBookRestoreUploadService({
     pickProgress,
   });
   return {
+    ...createBookRestoreEditorialAuditService({
+      db,
+      load,
+      readOp,
+      writeOp,
+      confirmed,
+      next,
+      pickProgress,
+    }),
+    ...createBookRestoreEditorialHeadsService({
+      db,
+      load,
+      readOp,
+      writeOp,
+      confirmed,
+      next,
+      pickProgress,
+    }),
+    ...createBookRestoreEditorialService({
+      db,
+      load,
+      readOp,
+      writeOp,
+      confirmed,
+      next,
+      pickProgress,
+    }),
     ...createBookRestorePreparedLoreService({ db, load }),
     ...createBookRestoreMediaService({ db, assets: restoreAssets, load, now }),
     ...createBookRestoreArchiveService({ db, load, readOp, now }),
-    ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets }),
+    ...createBookEditorialHistoryService({ db, load, readOp }),
+    ...createBookEditorialRestoreReviewCatalog({ db, load, readOp }),
+    ...createBookEditorialRestoreReviewService({ db, load, readOp, now }),
+    ...createBookRestoreActivationReviewService({ db, load, readOp, assets: restoreAssets, editorialActivation }),
     ...createBookRestoreActivationService({
+      editorialActivation,
       db,
       assets: restoreAssets,
       load,

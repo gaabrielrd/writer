@@ -1,3 +1,8 @@
+import type { BookEditorialCaptureApi } from '../../../../functions/src/bookEditorialCaptureCatalog.mjs';
+import {
+  bookEditorialBackupRecords,
+  verifyBookEditorialBackup,
+} from './bookEditorialBackupRecords';
 import type {
   WorkHistoryBackupPart,
   WorkHistoryStreamProof,
@@ -71,6 +76,7 @@ export interface BookBackupOptions {
     draft?: BookDraftApi;
     cover?: BookCoverApi;
     lore?: BookBackupLorePort;
+    editorial?: BookEditorialCaptureApi;
   };
 }
 function invalid(): never {
@@ -84,7 +90,16 @@ export function streamBookBackup(
   bookId: string,
   options: BookBackupOptions,
 ): AsyncGenerator<Uint8Array, BookBackupSeal | undefined, void> {
-  const settings = { ...options, apis: { ...options.apis }, history: { ...options.history } },
+  const settings = {
+      ...options,
+      apis: {
+        ...options.apis,
+        ...(options.apis?.editorial
+          ? { editorial: Object.freeze({ ...options.apis.editorial }) }
+          : {}),
+      },
+      history: { ...options.history },
+    },
     controller = new AbortController(),
     lore = { ...(settings.apis.lore ?? createBookBackupLorePort()) };
   function check() {
@@ -164,7 +179,8 @@ export function streamBookBackup(
       return true;
     },
   });
-  const counts = createBookPackageCounts();
+  const archiveVersion = settings.apis.editorial ? 2 : 1;
+  const counts = createBookPackageCounts(archiveVersion);
   const bridge = <T>(
     produce: (
       write: (record: BookBackupRecord) => Promise<void>,
@@ -185,7 +201,7 @@ export function streamBookBackup(
           complete = true;
           return next.value;
         }
-        countBookPackageRecord(counts, name, next.value);
+        countBookPackageRecord(counts, name, next.value, archiveVersion);
         yield next.value;
       }
     } finally {
@@ -206,7 +222,7 @@ export function streamBookBackup(
       expected,
     );
     check();
-    yield bookPackageHeader(bookId);
+    yield bookPackageHeader(bookId, archiveVersion);
     const structure = yield* section(
       'structure',
       bridge((write, signal) =>
@@ -274,6 +290,21 @@ export function streamBookBackup(
       }),
     );
     same(cover);
+    const editorialOptions = settings.apis.editorial
+      ? {
+          api: settings.apis.editorial,
+          expectedBookSourceToken: anchor.sourceToken,
+          signal: controller.signal,
+          isCurrent: () => {
+            check();
+            return true;
+          },
+        }
+      : null;
+    const editorial = editorialOptions
+      ? yield* section('editorial', bookEditorialBackupRecords(bookId, editorialOptions))
+      : null;
+    if (editorialOptions && !editorial) invalid();
     if (!structure || !resources || !personas || !universe || !draft || !cover) invalid();
     await verifyBookBackupStructure(structure, { api: structureApi, signal: controller.signal });
     await verifyBookBackupResources(resources, {
@@ -308,13 +339,14 @@ export function streamBookBackup(
         return true;
       },
     });
+    if (editorial && editorialOptions) await verifyBookEditorialBackup(editorial, editorialOptions);
     source(
       await structureApi.getSource({ bookId, expectedSourceToken: anchor.sourceToken }),
       bookId,
       anchor.sourceToken,
     );
     check();
-    yield bookPackageEnd(bookId, counts);
+    yield bookPackageEnd(bookId, counts, archiveVersion);
     check();
   }
   return bytes();

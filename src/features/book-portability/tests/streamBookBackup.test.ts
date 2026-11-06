@@ -1,3 +1,14 @@
+import { BackupDirectoryHandle } from './helpers/backupFileSystem';
+import type {
+  BookEditorialArtifact,
+  BookEditorialReference,
+} from '../../../../functions/src/bookEditorialProtocol.mjs';
+import {
+  BOOK_EDITORIAL_CAPTURE_FAMILIES,
+  BOOK_EDITORIAL_CAPTURE_FENCE_COVERAGE,
+  type BookEditorialCaptureApi,
+  type BookEditorialCaptureMetadata,
+} from '../../../../functions/src/bookEditorialCaptureCatalog.mjs';
 import { createHash, webcrypto } from 'node:crypto';
 import type { BookStructureApi } from '../../../../functions/src/bookBackupStructure.mjs';
 import type { BookResourceApi } from '../../../../functions/src/bookBackupResources.mjs';
@@ -149,7 +160,12 @@ function source(chunks: Uint8Array[]) {
       Promise.resolve(bytes.subarray(offset, offset + length)),
   };
 }
-beforeEach(() => vi.stubGlobal('crypto', webcrypto));
+let storageRoot: BackupDirectoryHandle;
+beforeEach(() => {
+  vi.stubGlobal('crypto', webcrypto);
+  storageRoot = new BackupDirectoryHandle();
+  vi.stubGlobal('navigator', { storage: { getDirectory: () => Promise.resolve(storageRoot) } });
+});
 afterEach(() => vi.unstubAllGlobals());
 it('writes all seven sections including explicit absence, reverifies each domain and closes only after a sealed package', async () => {
   const f = fixture(),
@@ -332,4 +348,227 @@ it('temporary file adapter copies frames, commits once and refuses writes after 
   await second.abort('again');
   expect(writer.abort).toHaveBeenCalledOnce();
   await expect(second.write(frame)).rejects.toThrow();
+});
+
+function emptyEditorialApi(): BookEditorialCaptureApi {
+  const anchor = {
+    schemaVersion: 1 as const,
+    bookId: 'book',
+    bookSourceToken: 'a'.repeat(64),
+    editorialSourceToken: 'f'.repeat(64),
+    coverage: 'saved-editorial-records-only' as const,
+  };
+  const unexpected = () => Promise.reject(new Error('No editorial record should be read'));
+  return {
+    getSource: () => Promise.resolve({ ...anchor }),
+    catalog: () =>
+      Promise.resolve({
+        ...anchor,
+        catalogVersion: 1 as const,
+        catalogToken: 'c'.repeat(64),
+        families: [...BOOK_EDITORIAL_CAPTURE_FAMILIES],
+        fenceCoverage: BOOK_EDITORIAL_CAPTURE_FENCE_COVERAGE,
+      }),
+    list: (input) =>
+      Promise.resolve({
+        ...anchor,
+        family: input.family,
+        items: [],
+        lastId: null,
+        nextCursor: null,
+      }),
+    read: unexpected,
+    inspect: unexpected,
+    verify: unexpected,
+    verifySource: vi.fn(() => Promise.resolve({ ...anchor })),
+  };
+}
+it('seals the opt-in eight-section archive only after the editorial census and final native proof', async () => {
+  const f = fixture(),
+    editorial = emptyEditorialApi();
+  f.options.apis!.editorial = editorial;
+  await saveBookBackup('book', f.options, f.sink);
+  const report = await inspectBookBackupPackage(source(f.chunks));
+  expect(report.manifest.version).toBe(2);
+  expect(report.manifest.sections).toHaveLength(8);
+  expect(report.sections.editorial?.records).toBe(1);
+  expect(editorial.verifySource).toHaveBeenCalledTimes(2);
+  expect(f.sink.close).toHaveBeenCalledOnce();
+  expect(f.sink.abort).not.toHaveBeenCalled();
+});
+it('aborts the provisional archive without a seal when the final editorial proof is revoked', async () => {
+  const f = fixture(),
+    editorial = emptyEditorialApi();
+  f.options.apis!.editorial = editorial;
+  const capturedSource = await editorial.getSource({ bookId: 'book' });
+  vi.mocked(editorial.verifySource)
+    .mockResolvedValueOnce(capturedSource)
+    .mockRejectedValueOnce(new Error('revoked'));
+  await expect(saveBookBackup('book', f.options, f.sink)).rejects.toThrow('revoked');
+  expect(f.sink.close).not.toHaveBeenCalled();
+  expect(f.sink.abort).toHaveBeenCalledOnce();
+  await expect(inspectBookBackupPackage(source(f.chunks))).rejects.toThrow();
+});
+
+function savedDocument(references: BookEditorialReference[] = []): BookEditorialArtifact {
+  return {
+    schemaVersion: 1,
+    id: 'd'.repeat(64),
+    kind: 'document',
+    revision: null,
+    createdAt: null,
+    updatedAt: null,
+    provenance: 'author',
+    availability: { state: 'included' },
+    content: { role: 'progress', title: 'Private note', sections: [], references },
+  };
+}
+function editorialDocuments(values: BookEditorialArtifact[]): BookEditorialCaptureApi {
+  const base = emptyEditorialApi();
+  const anchor = {
+    schemaVersion: 1 as const,
+    bookId: 'book',
+    bookSourceToken: 'a'.repeat(64),
+    editorialSourceToken: 'f'.repeat(64),
+    coverage: 'saved-editorial-records-only' as const,
+  };
+  const rows = values.map((value, index) => ({
+    family: BOOK_EDITORIAL_CAPTURE_FAMILIES[index]!,
+    id: 'row-' + index,
+    body: JSON.stringify({ schemaVersion: 1, artifacts: [value] }),
+    value,
+  }));
+  const lookup = (input: { family: string; id: string }) => {
+    const row = rows.find((row) => row.family === input.family && row.id === input.id);
+    if (!row) throw new Error('Missing native row');
+    return row;
+  };
+  const metadata = (row: (typeof rows)[number]): BookEditorialCaptureMetadata => ({
+    ...anchor,
+    family: row.family,
+    id: row.id,
+    itemToken: hash(row.id),
+    state: 'artifact',
+    artifactId: row.value.id,
+    projectionToken: hash(row.family + row.id + row.body),
+    contentHash: hash(row.body),
+    payload: 'editorial-bundle',
+    recordCount: 1,
+  });
+  return {
+    ...base,
+    list: (input) => {
+      const selected = rows.filter((row) => row.family === input.family);
+      return Promise.resolve({
+        ...anchor,
+        family: input.family,
+        items: selected.map((row) => ({ id: row.id, itemToken: hash(row.id) })),
+        lastId: selected.at(-1)?.id ?? null,
+        nextCursor: null,
+      });
+    },
+    read: (input) => {
+      const row = lookup(input);
+      if (input.index !== 0) return Promise.reject(new Error('Unexpected part'));
+      return Promise.resolve({
+        ...metadata(row),
+        index: 0,
+        byteLength: Buffer.byteLength(row.body),
+        chunkCount: 1,
+        chunkHash: hash(row.body),
+        chunkBase64: Buffer.from(row.body).toString('base64'),
+      });
+    },
+    inspect: (input) => Promise.resolve(metadata(lookup(input))),
+    verify: (input) => Promise.resolve(metadata(lookup(input))),
+  };
+}
+it('rejects globally duplicated editorial IDs across independently valid native bundles before confirming the destination', async () => {
+  const f = fixture(),
+    api = editorialDocuments([savedDocument(), savedDocument()]);
+  f.options.apis!.editorial = api;
+  await expect(saveBookBackup('book', f.options, f.sink)).rejects.toThrow();
+  expect(api.verifySource).toHaveBeenCalledTimes(2);
+  expect((await inspectBookBackupPackage(source(f.chunks))).manifest.version).toBe(2);
+  expect(f.sink.close).not.toHaveBeenCalled();
+  expect(f.sink.abort).toHaveBeenCalledOnce();
+  expect(storageRoot.directories.get('writer-book-backup-stage-v1')?.directories.size).toBe(0);
+  expect(storageRoot.directories.get('writer-book-validation-v1')?.directories.size).toBe(0);
+});
+it('rejects a recorded editorial relationship without its actual target despite valid framing and native census', async () => {
+  const f = fixture(),
+    api = editorialDocuments([
+      savedDocument([
+        {
+          kind: 'artifact',
+          id: 'e'.repeat(64),
+          parentId: null,
+          scope: { kind: 'book', id: 'book' },
+          revision: null,
+          contentHash: null,
+          state: 'recorded',
+          purpose: 'source',
+        },
+      ]),
+    ]);
+  f.options.apis!.editorial = api;
+  await expect(saveBookBackup('book', f.options, f.sink)).rejects.toThrow();
+  expect(api.verifySource).toHaveBeenCalledTimes(2);
+  expect((await inspectBookBackupPackage(source(f.chunks))).manifest.version).toBe(2);
+  expect(f.sink.close).not.toHaveBeenCalled();
+  expect(f.sink.abort).toHaveBeenCalledOnce();
+});
+it('does not commit the destination when encrypted staging or semantic-index cleanup is not confirmed', async () => {
+  const f = fixture();
+  f.options.apis!.editorial = emptyEditorialApi();
+  storageRoot.faults.remove = new Error('cleanup unavailable');
+  await expect(saveBookBackup('book', f.options, f.sink)).rejects.toThrow();
+  expect(f.sink.close).not.toHaveBeenCalled();
+  expect(f.sink.abort).toHaveBeenCalledOnce();
+  expect(storageRoot.directories.get('writer-book-backup-stage-v1')?.directories.size).toBe(1);
+});
+it('keeps legacy exports independent of OPFS availability', async () => {
+  const f = fixture();
+  vi.stubGlobal('navigator', {
+    storage: { getDirectory: () => Promise.reject(new Error('OPFS unavailable')) },
+  });
+  await saveBookBackup('book', f.options, f.sink);
+  expect(f.sink.close).toHaveBeenCalledOnce();
+});
+it('freezes the editorial port before awaiting a file picker instead of adopting a changed API object', async () => {
+  const f = fixture(),
+    api = emptyEditorialApi(),
+    destination = deferred<BookBackupSink>();
+  f.options.apis!.editorial = api;
+  const saving = saveBookBackup('book', f.options, destination.promise);
+  api.catalog = () => Promise.reject(new Error('changed port'));
+  destination.resolve(f.sink);
+  await saving;
+  expect(f.sink.close).toHaveBeenCalledOnce();
+});
+
+it('aborts after session loss during semantic inspection even when the complete stream and final native proofs succeeded', async () => {
+  const f = fixture(),
+    api = emptyEditorialApi();
+  let current = true,
+    opened = 0;
+  f.options.apis!.editorial = api;
+  f.options.isCurrent = () => current;
+  vi.stubGlobal('navigator', {
+    storage: {
+      getDirectory: () => {
+        if (++opened === 2) current = false;
+        return Promise.resolve(storageRoot);
+      },
+    },
+  });
+  await expect(saveBookBackup('book', f.options, f.sink)).rejects.toMatchObject({
+    name: 'AbortError',
+  });
+  expect(api.verifySource).toHaveBeenCalledTimes(2);
+  expect((await inspectBookBackupPackage(source(f.chunks))).manifest.version).toBe(2);
+  expect(f.sink.close).not.toHaveBeenCalled();
+  expect(f.sink.abort).toHaveBeenCalledOnce();
+  expect(storageRoot.directories.get('writer-book-backup-stage-v1')?.directories.size).toBe(0);
+  expect(storageRoot.directories.get('writer-book-validation-v1')?.directories.size).toBe(0);
 });

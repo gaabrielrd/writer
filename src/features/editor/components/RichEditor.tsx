@@ -2,7 +2,9 @@ import { useState, useRef, useMemo, useEffect, useLayoutEffect, useId } from 're
 import { createPortal } from 'react-dom';
 import { EditorContent, useEditor, type Editor } from '@tiptap/react';
 import StarterKit from '@tiptap/starter-kit';
-import type { Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { DOMSerializer, type Node as ProseMirrorNode } from '@tiptap/pm/model';
+import { chatDocumentHash, type AtomicAutocompleteApply } from '@/features/ai-assistant';
+import { WritingContextPreview } from '@/features/literary-production';
 import { closeHistory } from '@tiptap/pm/history';
 import {
   Bold,
@@ -16,7 +18,7 @@ import {
   Undo2,
   Redo2,
 } from 'lucide-react';
-import { Button, Badge } from '@/shared/ui';
+import { Button, Badge, Alert } from '@/shared/ui';
 import { type LoreCategory, type LoreEntity, type LoreMentionEntity } from '@/features/lore';
 import {
   useAIAutocomplete,
@@ -76,6 +78,10 @@ export interface RichEditorProps<T extends LoreMentionEntity = LoreEntity> {
   writingPersona?: WritingPersonaContext;
   aiUnavailableReason?: string | null;
   documentId?: string;
+  bookId?: string;
+  autocompletePlanIds?: string[];
+  autocompleteContextVersion?: string;
+  onAtomicAutocompleteApply?: (input: AtomicAutocompleteApply) => Promise<void>;
   content: string;
   onChange: (content: string) => void;
   entities: T[];
@@ -125,6 +131,10 @@ export function RichEditor<T extends LoreMentionEntity>({
   chapterTitle = '',
   bookTitle = '',
   documentId,
+  bookId,
+  autocompletePlanIds,
+  autocompleteContextVersion,
+  onAtomicAutocompleteApply,
   writingPersona,
   aiUnavailableReason,
   content,
@@ -325,8 +335,18 @@ export function RichEditor<T extends LoreMentionEntity>({
   const cursorPosition =
     editor?.state.doc.textBetween(0, editor.state.selection.from, '\n', '\n').length ?? 0;
   const isUsingBYOK = config.provider !== 'firebase_ai';
-  const { suggestion, acceptSuggestion, discardSuggestion } = useAIAutocomplete({
+  const {
+    suggestion,
+    editorial: autocompleteEditorial,
+    error: autocompleteError,
+    acceptSuggestion,
+    discardSuggestion,
+  } = useAIAutocomplete({
+    planIds: autocompletePlanIds,
+    contextVersion: autocompleteContextVersion,
     writingPersona,
+    atomicScope: bookId && documentId ? { bookId, chapterId: documentId } : undefined,
+    captureDocument: () => (editor && !editor.isDestroyed ? editor.getHTML() : null),
     typingRevision,
     content: text,
     cursorPosition,
@@ -477,6 +497,43 @@ export function RichEditor<T extends LoreMentionEntity>({
           editor.state.doc.eq(target.doc) &&
           capabilityGuard.current.autocompleteEnabled &&
           !capabilityGuard.current.aiUnavailableReason,
+        async (offer) => {
+          if (!onAtomicAutocompleteApply || editor.isDestroyed || !editor.state.doc.eq(target.doc))
+            throw new Error('O editor mudou antes do aceite.');
+          const before = editor.getHTML();
+          if (
+            (await chatDocumentHash(before)) !== offer.beforeHash ||
+            editor.isDestroyed ||
+            !editor.state.doc.eq(target.doc)
+          )
+            throw new Error('O texto mudou desde a geração da sugestão.');
+          const previous = editor.state.doc.textBetween(Math.max(0, target.from - 1), target.from);
+          const inserted = (previous && !/\s$/.test(previous) ? ' ' : '') + offer.text;
+          const transaction = editor.state.tr.replaceWith(
+            target.from,
+            target.to,
+            editor.schema.text(inserted),
+          );
+          const container = document.createElement('div');
+          container.append(
+            DOMSerializer.fromSchema(editor.schema).serializeFragment(transaction.doc.content),
+          );
+          await onAtomicAutocompleteApply({
+            offer,
+            before,
+            after: container.innerHTML,
+            commit: () => {
+              if (
+                editor.isDestroyed ||
+                editor.getHTML() !== before ||
+                !editor.state.doc.eq(target.doc)
+              )
+                throw new Error('O editor mudou. Recupere o aceite antes de continuar.');
+              editor.view.dispatch(transaction);
+              editor.view.focus();
+            },
+          });
+        },
       );
       if (
         !accepted ||
@@ -896,6 +953,12 @@ export function RichEditor<T extends LoreMentionEntity>({
         </div>
       </div>
       {!chapterLayout && loreSummary}
+      {autocompleteError && (
+        <Alert variant="warning" title="Autocomplete">
+          {autocompleteError}
+        </Alert>
+      )}
+      {autocompleteEditorial && <WritingContextPreview snapshot={autocompleteEditorial} />}
       <div className={styles.bodyLayout}>
         <ChapterMinimap
           destinations={minimap.destinations}

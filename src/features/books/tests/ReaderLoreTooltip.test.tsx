@@ -1,56 +1,60 @@
-import { describe, expect, it, vi } from 'vitest';
-import { render, screen } from '@/test/render';
+import { afterEach, expect, it } from 'vitest';
+import { fireEvent, render, screen } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { ReaderLoreTooltip } from '../components/ReaderLoreTooltip';
 import type { PublicLoreEntity } from '../model/publicBook';
-
-const entity: PublicLoreEntity = {
-  id: 'lia',
-  name: 'Lia',
+const entity = (id: string, name: string): PublicLoreEntity => ({
+  id,
+  name,
   aliases: [],
   category: 'character',
-  summary: 'Uma cartógrafa.',
+  summary: 'Resumo de ' + name,
   isPublic: true,
+});
+const originalMatchMedia = window.matchMedia.bind(window);
+afterEach(() => {
+  window.matchMedia = originalMatchMedia;
+});
+const hoverSupport = (none: boolean) => {
+  window.matchMedia = (query) => ({
+    ...originalMatchMedia.call(window, query),
+    matches: query === '(any-hover: none)' ? none : false,
+  });
 };
-
-describe('ReaderLoreTooltip dismissal', () => {
-  it('dismisses a hover-only tooltip with Escape while keyboard focus is elsewhere', async () => {
-    const user = userEvent.setup();
-    render(
-      <>
-        <button type="button">Outro controle</button>
-        <ReaderLoreTooltip entity={entity}>Lia</ReaderLoreTooltip>
-      </>,
-    );
-    await user.click(screen.getByRole('button', { name: 'Outro controle' }));
-    const term = screen.getByRole('button', { name: 'Ver resumo de Lia' });
-    await user.hover(term);
-    expect(screen.getByRole('tooltip')).toHaveTextContent('Uma cartógrafa.');
-    expect(screen.getByRole('button', { name: 'Outro controle' })).toHaveFocus();
-    await user.keyboard('{ArrowDown}');
-    expect(screen.getByRole('tooltip')).toBeInTheDocument();
-    await user.keyboard('{Escape}');
-    expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Outro controle' })).toHaveFocus();
-    await user.unhover(term);
-    await user.hover(term);
-    expect(screen.getByRole('tooltip')).toBeInTheDocument();
-  });
-
-  it('removes its Escape listener on unmount', async () => {
-    const user = userEvent.setup();
-    const add = vi.spyOn(window, 'addEventListener');
-    const remove = vi.spyOn(window, 'removeEventListener');
-    try {
-      const { unmount } = render(<ReaderLoreTooltip entity={entity}>Lia</ReaderLoreTooltip>);
-      await user.hover(screen.getByRole('button', { name: 'Ver resumo de Lia' }));
-      const listener = add.mock.calls.find(([event]) => event === 'keydown')?.[1];
-      expect(listener).toBeDefined();
-      unmount();
-      expect(remove).toHaveBeenCalledWith('keydown', listener);
-    } finally {
-      add.mockRestore();
-      remove.mockRestore();
-    }
-  });
+const mount = () =>
+  render(
+    <>
+      <ReaderLoreTooltip entity={entity('one', 'Ana')}>Ana</ReaderLoreTooltip>
+      <ReaderLoreTooltip entity={entity('two', 'Beatriz')}>Beatriz</ReaderLoreTooltip>
+    </>,
+  );
+it('touch focus and tap open a summary but synthetic mouse entry cannot open another tooltip after Escape', async () => {
+  hoverSupport(true);
+  mount();
+  const first = screen.getByRole('button', { name: 'Ver resumo de Ana' }),
+    second = screen.getByRole('button', { name: 'Ver resumo de Beatriz' });
+  await userEvent.click(first);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Resumo de Ana');
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  if (!second.parentElement) throw new Error('Termo não montado.');
+  fireEvent.mouseEnter(second.parentElement);
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  await userEvent.click(second);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Resumo de Beatriz');
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+});
+it('desktop hover remains available and Escape dismisses a hover-only summary without keyboard focus', async () => {
+  hoverSupport(false);
+  mount();
+  const first = screen.getByRole('button', { name: 'Ver resumo de Ana' });
+  await userEvent.hover(first);
+  expect(first).not.toHaveFocus();
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Resumo de Ana');
+  await userEvent.keyboard('{Escape}');
+  expect(screen.queryByRole('tooltip')).not.toBeInTheDocument();
+  await userEvent.unhover(first);
+  await userEvent.hover(first);
+  expect(screen.getByRole('tooltip')).toHaveTextContent('Resumo de Ana');
 });

@@ -1,3 +1,4 @@
+import { setPersonaWithCatalog, updatePersonaWithCatalog } from './helpers/personaCatalog.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -81,22 +82,29 @@ test('SDK active adventure origin allows revision CAS and binding, but cannot be
   const own = env.authenticatedContext(uid).firestore(),
     profile = adventurePersonaValue();
   await assertSucceeds(
-    setDoc(doc(own, paths.profile), { ...profile, revision: 8, name: 'Edited', updatedAt: 8 }),
+    setPersonaWithCatalog(own, doc(own, paths.profile), {
+      ...profile,
+      revision: 8,
+      name: 'Edited',
+      updatedAt: 8,
+    }),
   );
   await assertSucceeds(updateDoc(doc(own, 'books/existing-book'), { personaId: id }));
   assert.equal((await available()).data().revision, 8);
   const { restoreOrigin, ...withoutOrigin } = profile;
   assert.deepEqual(restoreOrigin, origin);
-  await assertFails(setDoc(doc(own, paths.profile), { ...withoutOrigin, revision: 9 }));
   await assertFails(
-    setDoc(doc(own, paths.profile), {
+    setPersonaWithCatalog(own, doc(own, paths.profile), { ...withoutOrigin, revision: 9 }),
+  );
+  await assertFails(
+    setPersonaWithCatalog(own, doc(own, paths.profile), {
       ...profile,
       revision: 9,
       restoreOrigin: { ...origin, jobToken: 'f'.repeat(64) },
     }),
   );
   await assertFails(
-    setDoc(doc(own, paths.profile), {
+    setPersonaWithCatalog(own, doc(own, paths.profile), {
       ...profile,
       revision: 9,
       restoreOrigin: {
@@ -107,10 +115,14 @@ test('SDK active adventure origin allows revision CAS and binding, but cannot be
       },
     }),
   );
-  await assertFails(updateDoc(doc(own, paths.profile), { revision: 8, name: 'Stale' }));
+  await assertFails(
+    updatePersonaWithCatalog(own, doc(own, paths.profile), { revision: 8, name: 'Stale' }),
+  );
   await cancelAdventurePersonaBatch(admin);
   assert.equal(await available(), null);
-  await assertFails(updateDoc(doc(own, paths.profile), { revision: 9, name: 'Revoked' }));
+  await assertFails(
+    updatePersonaWithCatalog(own, doc(own, paths.profile), { revision: 9, name: 'Revoked' }),
+  );
   await assertFails(updateDoc(doc(own, 'books/existing-book'), { personaId: id }));
 });
 for (const which of ['batch', 'first', 'last'])
@@ -146,13 +158,18 @@ test('SDK v2 rules refuse wrong target, owner, generation, missing batch and ext
     await ref.set({ ...batch, ...patch });
     assert.equal(await available(), null);
     await assertFails(
-      updateDoc(doc(own, paths.profile), { revision: 8, name: 'Blocked mismatch' }),
+      updatePersonaWithCatalog(own, doc(own, paths.profile), {
+        revision: 8,
+        name: 'Blocked mismatch',
+      }),
     );
     await assertFails(updateDoc(doc(own, 'books/existing-book'), { personaId: id }));
   }
   await ref.delete();
   assert.equal(await available(), null);
-  await assertFails(updateDoc(doc(own, paths.profile), { revision: 8, name: 'Missing batch' }));
+  await assertFails(
+    updatePersonaWithCatalog(own, doc(own, paths.profile), { revision: 8, name: 'Missing batch' }),
+  );
   await ref.set(batch);
   for (const marker of [
     { ...origin, bookId: 'restore-' + 'b'.repeat(64) },
@@ -160,7 +177,9 @@ test('SDK v2 rules refuse wrong target, owner, generation, missing batch and ext
   ]) {
     await admin.doc(paths.profile).set({ ...profile, restoreOrigin: marker });
     assert.equal(await available(), null);
-    await assertFails(updateDoc(doc(own, paths.profile), { revision: 8, name: 'Malformed' }));
+    await assertFails(
+      updatePersonaWithCatalog(own, doc(own, paths.profile), { revision: 8, name: 'Malformed' }),
+    );
     await assertFails(updateDoc(doc(own, 'books/existing-book'), { personaId: id }));
   }
 });
@@ -173,15 +192,21 @@ test('SDK keeps all 8–16 trait slots, integer and range checks within the rule
     trait = value.traits[0],
     traits = (length) =>
       Array.from({ length }, (_, n) => ({ ...trait, id: 'sdk-trait-' + n, value: 50 }));
-  await assertSucceeds(updateDoc(reference, { revision: 8, traits: traits(8) }));
-  await assertSucceeds(updateDoc(reference, { revision: 9, traits: traits(16) }));
+  await assertSucceeds(
+    updatePersonaWithCatalog(own, reference, { revision: 8, traits: traits(8) }),
+  );
+  await assertSucceeds(
+    updatePersonaWithCatalog(own, reference, { revision: 9, traits: traits(16) }),
+  );
   for (const count of [7, 17])
-    await assertFails(updateDoc(reference, { revision: 10, traits: traits(count) }));
+    await assertFails(
+      updatePersonaWithCatalog(own, reference, { revision: 10, traits: traits(count) }),
+    );
   for (const index of [0, 7, 8, 15])
     for (const invalid of [-1, 101, 50.5, '50', null]) {
       const items = traits(16);
       items[index] = { ...items[index], value: invalid };
-      await assertFails(updateDoc(reference, { revision: 10, traits: items }));
+      await assertFails(updatePersonaWithCatalog(own, reference, { revision: 10, traits: items }));
     }
   assert.equal((await available()).data().revision, 9);
 });
@@ -191,8 +216,16 @@ test('SDK manual profiles cannot acquire a null or forged restoration origin dur
     { restoreOrigin, ...plain } = value,
     path = 'users/' + uid + '/aiPersonas/custom-manual';
   assert.deepEqual(restoreOrigin, origin);
-  await assertSucceeds(setDoc(doc(own, path), { ...plain, id: 'custom-manual', revision: 1 }));
-  await assertFails(updateDoc(doc(own, path), { restoreOrigin: null, revision: 2 }));
-  await assertFails(updateDoc(doc(own, path), { restoreOrigin: origin, revision: 2 }));
-  await assertSucceeds(updateDoc(doc(own, path), { name: 'Still manual', revision: 2 }));
+  await assertSucceeds(
+    setPersonaWithCatalog(own, doc(own, path), { ...plain, id: 'custom-manual', revision: 1 }),
+  );
+  await assertFails(
+    updatePersonaWithCatalog(own, doc(own, path), { restoreOrigin: null, revision: 2 }),
+  );
+  await assertFails(
+    updatePersonaWithCatalog(own, doc(own, path), { restoreOrigin: origin, revision: 2 }),
+  );
+  await assertSucceeds(
+    updatePersonaWithCatalog(own, doc(own, path), { name: 'Still manual', revision: 2 }),
+  );
 });

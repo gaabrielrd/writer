@@ -3,7 +3,7 @@ import {
   type BookRestoreLocalReview,
   type InspectedBookRestore,
 } from '../model/bookRestoreReview';
-import type { BookBackupByteSource } from '../model/backupContainer';
+import { BookBackupFormatError, type BookBackupByteSource } from '../model/backupContainer';
 import { createBookBackupBlobSource } from './backupBlobSource';
 import { inspectBookBackupContent } from './inspectBookBackupContent';
 import { inspectLegacyBookBackup } from './inspectLegacyBookBackup';
@@ -58,6 +58,11 @@ export async function inspectBookRestoreFile(
       ? await inspectBookBackupContent(source, { signal })
       : await inspectLegacyBookBackup(source, { signal });
   guard();
+  if (report.validation === 'content-only' && report.envelope.manifest.version === 2)
+    throw new BookBackupFormatError(
+      'unsupported-version',
+      'A restauração do processo editorial ainda não está disponível.',
+    );
   onStage?.('hash');
   guard();
   const fingerprint = await fingerprintBookBackup(source, { signal });
@@ -69,7 +74,7 @@ export async function inspectBookRestoreFile(
   restorePreparationCheck(typeof sourceBookId === 'string' && sourceBookId.length > 0);
   const descriptor = readBookRestoreSourceDescriptor({
     format: legacy ? 'writer-book-backup' : 'writer-book-archive',
-    version: legacy ? legacy.source.version : 1,
+    version: legacy ? legacy.source.version : current?.envelope.manifest.version,
     byteLength: size,
     sha256: fingerprint.sha256,
   });

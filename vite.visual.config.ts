@@ -7,7 +7,43 @@ const root = import.meta.dirname;
 const replacements = new Map(
   [
     ['src/features/auth/services/authService.ts', 'authService.ts'],
+    [
+      'src/features/literary-production/services/literaryWritingService.ts',
+      'literaryWritingService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literarySequenceService.ts',
+      'literarySequenceService.ts',
+    ],
     ['src/features/onboarding/services/profileService.ts', 'onboardingFixture.ts'],
+    [
+      'src/features/literary-production/services/literaryWorkflowService.ts',
+      'literaryWorkflowService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryDraftService.ts',
+      'literaryDraftService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryPlanningService.ts',
+      'literaryPlanningService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryFindingService.ts',
+      'literaryFindingService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryIntegrationService.ts',
+      'literaryIntegrationService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryBookMapService.ts',
+      'literaryBookMapService.ts',
+    ],
+    [
+      'src/features/literary-production/services/literaryProductionService.ts',
+      'literaryProductionService.ts',
+    ],
     ['src/features/page-assistant/services/pageAssistantService.ts', 'pageAssistantFixture.ts'],
     ['src/features/custom-themes/services/customThemeService.ts', 'customThemeService.ts'],
     ['src/features/image-library/services/imageLibraryService.ts', 'imageLibraryService.ts'],
@@ -100,6 +136,10 @@ const replacements = new Map(
     ['src/features/ai-assistant/services/chapterChatService.ts', 'chapterChatService.ts'],
     ['src/features/ai-assistant/services/editorChatService.ts', 'editorChatService.ts'],
     ['src/shared/lib/firebase.ts', 'firebase.ts'],
+    [
+      'src/features/literary-production/services/literaryImpactService.ts',
+      'literaryImpactService.ts',
+    ],
   ].map(([source, fixture]) => [
     normalizePath(resolve(root, source)),
     resolve(root, 'e2e/visual/fixtures', fixture),

@@ -1,0 +1,9 @@
+.panel { display: flex; flex-direction: column; gap: 1rem; color: hsl(var(--foreground)); min-width: 0; }
+.actions, .catalog { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+.detail, .picker { display: flex; flex-direction: column; gap: .75rem; padding: 1rem; border: 1px solid hsl(var(--border)); border-radius: var(--radius-md); background: hsl(var(--card)); min-width: 0; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(15rem, 1fr)); gap: .75rem; }
+.panel ul { display: flex; flex-direction: column; gap: .5rem; padding-inline-start: 1.25rem; }
+.panel li { overflow-wrap: anywhere; }
+.panel summary { cursor: pointer; font-weight: 600; }
+.text { white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; max-height: 55vh; overflow: auto; padding: .75rem; border: 1px solid hsl(var(--border)); background: hsl(var(--background)); border-radius: var(--radius-md); }
+.value { padding-inline-start: .75rem; border-inline-start: 1px solid hsl(var(--border)); }

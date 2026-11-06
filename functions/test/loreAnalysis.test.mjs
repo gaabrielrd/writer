@@ -1,6 +1,8 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { createLoreAnalysisService, validateDetectedLore } from '../src/loreAnalysis.mjs';
+import { emptyEditorialContract } from '../src/literaryContracts.mjs';
+import { composeEditorialContract } from '../src/literaryEditorialComposition.mjs';
 
 const detected = {
   name: 'Arthur',
@@ -577,4 +579,99 @@ test('todos os blocos e a reparação de lore conservam modelo/raciocínio valid
     }),
     { code: 'invalid-argument' },
   );
+});
+
+function editorialFixture(f, revision = 1) {
+  const contract = emptyEditorialContract();
+  contract.fields.narrator = 'Terceira pessoa limitada a Arthur.';
+  contract.fields.reservations = 'A origem da carta é reserva futura, não fato observado.';
+  f.records.set('books/book/literaryProduction/current', {
+    revision,
+    updatedAt: revision,
+    contract,
+  });
+  f.records.set('books/book', {
+    ...f.records.get('books/book'),
+    literaryContextRevision: revision,
+  });
+  return contract;
+}
+
+test('lore analysis uses the canonical author guide and persists only its native proof', async () => {
+  let received;
+  const f = fixture(async (context) => {
+    received = context;
+    return JSON.stringify({ entities: [detected] });
+  });
+  const contract = editorialFixture(f);
+  const before = structuredClone([...f.records]);
+  const source = await f.service.getLoreAnalysisEditorialContext('author', {
+    bookId: request.bookId,
+    chapterId: request.chapterId,
+  });
+  assert.deepEqual([...f.records], before);
+  assert.equal(source.scope, 'editorial-contract-only');
+  assert.equal(source.wholeBook, false);
+  assert.equal(source.instruction, composeEditorialContract(contract).instruction);
+  const result = await f.service.analyzeChapterLore('author', {
+    ...request,
+    editorialContextToken: source.contextToken,
+  });
+  assert.deepEqual(received.editorialContext, source);
+  assert.deepEqual(result.editorialContext, source);
+  const ticket = f.records.get('users/author/loreAnalyses/' + request.requestId);
+  assert.equal(ticket.editorialContextToken, source.contextToken);
+  assert.equal(Object.hasOwn(ticket, 'editorialContext'), false);
+  assert.equal(JSON.stringify(ticket).includes(contract.fields.narrator), false);
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+
+test('changing the guide while a provider answers invalidates the response without applying or charging', async () => {
+  const f = fixture(async () => {
+    editorialFixture(f, 2);
+    return JSON.stringify({ entities: [detected] });
+  });
+  editorialFixture(f, 1);
+  await assert.rejects(f.service.analyzeChapterLore('author', request), {
+    code: 'failed-precondition',
+  });
+  assert.equal(f.records.get('users/author/loreAnalyses/' + request.requestId).state, 'failed');
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+
+test('BYOK with a saved guide requires its exact inspected proof before reserving a result', async () => {
+  const f = fixture();
+  editorialFixture(f);
+  const before = structuredClone([...f.records]);
+  await assert.rejects(f.service.prepareBYOKLore('author', { ...request, entities: [detected] }), {
+    code: 'failed-precondition',
+  });
+  assert.deepEqual([...f.records], before);
+  const source = await f.service.getLoreAnalysisEditorialContext('author', {
+    bookId: request.bookId,
+    chapterId: request.chapterId,
+  });
+  const result = await f.service.prepareBYOKLore('author', {
+    ...request,
+    editorialContextToken: source.contextToken,
+    entities: [detected],
+  });
+  assert.deepEqual(result.editorialContext, source);
+  assert.equal(f.records.get('users/author').credits, 5);
+});
+
+test('a ready lore result cannot apply after the guide changes, even when the content hash is unchanged', async () => {
+  const f = fixture();
+  editorialFixture(f);
+  await f.service.analyzeChapterLore('author', request);
+  const changed = editorialFixture(f, 2);
+  changed.fields.narrator = 'Outra voz';
+  f.records.set('books/book/literaryProduction/current', {
+    revision: 2,
+    updatedAt: 2,
+    contract: changed,
+  });
+  const before = structuredClone([...f.records]);
+  await assert.rejects(apply(f.service), { code: 'failed-precondition' });
+  assert.deepEqual([...f.records], before);
 });

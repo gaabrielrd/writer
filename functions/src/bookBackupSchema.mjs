@@ -1,3 +1,8 @@
+import {
+  normalizeBookEditorialArtifact,
+  normalizeBookEditorialLink,
+  normalizeBookEditorialControl,
+} from './bookEditorialProtocol.mjs';
 import { BookBackupFormatError } from './bookBackupContainer.mjs';
 import { readBookPersonaAvailability } from './bookPersonaAvailability.mjs';
 import { BOOK_RESOURCE_KINDS, BOOK_RESOURCE_SINGLETONS } from './bookBackupResources.mjs';
@@ -353,6 +358,17 @@ export function projectBookVersionDraft(value, resource) {
 
 export function validateBookBackupJSONItem(kind, value, bookId) {
   bookContentId(bookId);
+  if (['book-editorial-artifact', 'book-editorial-link', 'book-editorial'].includes(kind)) {
+    try {
+      return {
+        'book-editorial-artifact': normalizeBookEditorialArtifact,
+        'book-editorial-link': normalizeBookEditorialLink,
+        'book-editorial': normalizeBookEditorialControl,
+      }[kind](value);
+    } catch {
+      return bad();
+    }
+  }
   if (kind === 'book-metadata') {
     bookContentClosed(value, ['book', 'progress', 'cover']);
     bookContentClosed(

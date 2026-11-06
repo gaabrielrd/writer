@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react'
 import { Link, useNavigate } from 'react-router';
 import { ArrowLeft, ArrowUp, Check, Sparkles } from 'lucide-react';
 import { useAuth } from '@/features/auth';
+import { EditorialProposalFields } from '@/features/literary-production';
 import { ImageLibraryPicker, type LibraryImage } from '@/features/image-library';
 import { LoreEntityForm, type LoreEntity } from '@/features/lore';
 import { Alert, Badge, Button, Card, Dialog, Input, LoadingState, Textarea } from '@/shared/ui';
@@ -533,6 +534,11 @@ function AssistedCreation() {
                 onChange={(event) => setProposal({ ...proposal, synopsis: event.target.value })}
               />
             </Card>
+            <EditorialProposalFields
+              value={proposal.editorialContract}
+              disabled={disabled}
+              onChange={(editorialContract) => setProposal({ ...proposal, editorialContract })}
+            />
             <h3>Compêndio inicial · {proposal.entities.length} fichas</h3>
             <div className={styles.entities}>
               {proposal.entities.map((entity) => (

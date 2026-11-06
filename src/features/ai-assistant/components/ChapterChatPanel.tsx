@@ -12,6 +12,12 @@ import {
   SidePanelHeader,
 } from '@/shared/ui';
 import { useChapterChat } from '../hooks/useChapterChat';
+import {
+  editorialFields,
+  statusLabels,
+  WritingSourcePicker,
+  WritingContextPreview,
+} from '@/features/literary-production';
 import { useAIConfig } from '../hooks/useAIConfig';
 import { useAISettings } from '../hooks/useAISettings';
 import {
@@ -85,6 +91,10 @@ export function ChapterChatPanel({
   );
   const reasoningUnavailable = !capabilities.levels.includes(chat.reasoning);
   const [source, setSource] = useState<ChatContextSource>('auto');
+  const [literaryPlanIds, setLiteraryPlanIds] = useState<string[] | undefined>(undefined);
+  useEffect(() => {
+    queueMicrotask(() => setLiteraryPlanIds(undefined));
+  }, [uid, bookId, chapterId]);
   const [pinned, setPinned] = useState<ChatContext | null>(null);
   const [inspect, setInspect] = useState(false);
   const [applying, setApplying] = useState(false);
@@ -184,7 +194,10 @@ export function ChapterChatPanel({
       }
       const context = await capture();
       composer.current?.focus();
-      await chat.send(context);
+      await chat.send({
+        ...context,
+        ...(literaryPlanIds === undefined ? {} : { literaryPlanIds }),
+      });
     } catch (cause) {
       chat.setError((cause as Error).message);
     }
@@ -371,6 +384,33 @@ export function ChapterChatPanel({
                 {message.context.persona.instruction && (
                   <p>{message.context.persona.instruction}</p>
                 )}
+                {message.context.writing && (
+                  <WritingContextPreview snapshot={message.context.writing} />
+                )}
+                {message.context.editorial && (
+                  <details>
+                    <summary>
+                      Contrato editorial · revisão {message.context.editorial.revision}
+                    </summary>
+                    <dl>
+                      {Object.entries(message.context.editorial.contract.fields)
+                        .filter(([, value]) => value)
+                        .map(([key, value]) => (
+                          <div key={key}>
+                            <dt>{editorialFields[key as keyof typeof editorialFields]}</dt>
+                            <dd>{value}</dd>
+                          </div>
+                        ))}
+                    </dl>
+                    <ul>
+                      {message.context.editorial.contract.decisions.map((decision) => (
+                        <li key={decision.id}>
+                          {decision.text} · {statusLabels[decision.status]} · {decision.source}
+                        </li>
+                      ))}
+                    </ul>
+                  </details>
+                )}
                 {message.context.truncated && <small>Contexto reduzido ao limite.</small>}
               </details>
             )}
@@ -522,6 +562,13 @@ export function ChapterChatPanel({
             ))}
           </div>
         )}
+        <WritingSourcePicker
+          key={uid + ':' + bookId + ':' + chapterId}
+          bookId={bookId}
+          value={literaryPlanIds}
+          onChange={setLiteraryPlanIds}
+          disabled={running || applying || chat.loading}
+        />
         <div className={styles.inputWell} data-chat-input-well>
           <Textarea
             ref={composer}

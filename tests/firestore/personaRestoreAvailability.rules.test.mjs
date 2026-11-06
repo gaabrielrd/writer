@@ -1,3 +1,4 @@
+import { setPersonaWithCatalog, updatePersonaWithCatalog } from './helpers/personaCatalog.mjs';
 import assert from 'node:assert/strict';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -60,7 +61,9 @@ test('SDK pending personas cannot be edited, forged, erased or linked while exis
   await assertFails(getDoc(doc(other, paths.profile)));
   await assertFails(getDoc(doc(anon, paths.profile)));
   await assertFails(getDoc(doc(other, paths.batch)));
-  await assertFails(setDoc(reference, { ...profile, revision: 8, name: 'Changed' }));
+  await assertFails(
+    setPersonaWithCatalog(own, reference, { ...profile, revision: 8, name: 'Changed' }),
+  );
   await assertFails(
     setDoc(doc(own, 'users/' + uid + '/aiPersonas/custom-' + 'e'.repeat(64)), {
       ...profile,
@@ -74,10 +77,12 @@ test('SDK pending personas cannot be edited, forged, erased or linked while exis
   assert.equal(await available(), null);
   const legacy = { ...profile, id: 'custom-existing', revision: 1 };
   delete legacy.restoreOrigin;
-  await assertSucceeds(setDoc(doc(own, 'users/' + uid + '/aiPersonas/' + legacy.id), legacy));
+  await assertSucceeds(
+    setPersonaWithCatalog(own, doc(own, 'users/' + uid + '/aiPersonas/' + legacy.id), legacy),
+  );
   await assertSucceeds(updateDoc(doc(own, 'books/existing-book'), { personaId: legacy.id }));
   await assertSucceeds(
-    updateDoc(doc(own, 'users/' + uid + '/aiPersonas/' + legacy.id), {
+    updatePersonaWithCatalog(own, doc(own, 'users/' + uid + '/aiPersonas/' + legacy.id), {
       revision: 2,
       name: 'Legacy changed',
     }),
@@ -89,15 +94,20 @@ test('SDK active persona can be edited and linked while operational origin stays
     profile = personaRestoreValue();
   assert.equal((await available()).data().revision, 7);
   await assertSucceeds(
-    setDoc(doc(own, paths.profile), { ...profile, revision: 8, name: 'Changed', updatedAt: 8 }),
+    setPersonaWithCatalog(own, doc(own, paths.profile), {
+      ...profile,
+      revision: 8,
+      name: 'Changed',
+      updatedAt: 8,
+    }),
   );
   assert.equal((await available()).data().revision, 8);
   await assertSucceeds(updateDoc(doc(own, 'books/existing-book'), { personaId: id }));
   const removed = { ...profile, revision: 9 };
   delete removed.restoreOrigin;
-  await assertFails(setDoc(doc(own, paths.profile), removed));
+  await assertFails(setPersonaWithCatalog(own, doc(own, paths.profile), removed));
   await assertFails(
-    setDoc(doc(own, paths.profile), {
+    setPersonaWithCatalog(own, doc(own, paths.profile), {
       ...profile,
       revision: 9,
       restoreOrigin: { ...profile.restoreOrigin, jobToken: 'f'.repeat(64) },

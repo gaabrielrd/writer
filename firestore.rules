@@ -21,6 +21,25 @@ service cloud.firestore {
           || validStudioDate(request.resource.data.get('createdAt', null)));
     }
 
+    // Same normalized values as the individual comparisons, with a smaller expression budget.
+    function bookServerState(data) {
+      return [
+        data.get('hasLiteraryResources', false),
+        data.get('hasLiteraryArchiveResources', false),
+        data.get('hasLiteraryPublications', false),
+        data.get('literaryRevision', 0),
+        data.get('literaryContextRevision', 0),
+        data.get('literaryDependencyRevision', 0),
+        data.get('hasSceneResources', false),
+        data.get('sceneRevision', 0),
+        data.get('hasNarrativeResources', false),
+        data.get('narrativeRevision', 0),
+        data.get('hasProgressResources', false),
+        data.get('hasLoreResources', false),
+        data.get('editorialState', null),
+        data.get('sceneDeletionOperationId', null)
+      ];
+    }
     // Membership writes must invalidate paginated captures of a live book.
     function bookStructureClockAdvanced(bookId) {
       let before = get(/databases/$(database)/documents/books/$(bookId)).data.get('updatedAt', null);
@@ -260,7 +279,6 @@ service cloud.firestore {
       return data.keys().hasOnly(['id', 'schemaVersion', 'name', 'description', 'instructions', 'traits', 'revision', 'archived', 'createdAt', 'updatedAt', 'restoreOrigin'])
         && data.id == personaId && personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$')
         && data.schemaVersion == 1
-        && (!data.keys().hasAny(['restoreOrigin']) || validPersonaRestoreOrigin(data.restoreOrigin))
         && data.name is string && data.name.size() > 0 && data.name.size() <= 80
         && data.description is string && data.description.size() <= 500
         && data.instructions is string && data.instructions.size() > 0 && data.instructions.size() <= 6000
@@ -306,25 +324,35 @@ service cloud.firestore {
       return !data.keys().hasAny(['restoreOrigin']) || (data.id is string && data.id.matches('^custom-[a-f0-9]{64}$')
         && validPersonaRestoreOrigin(data.restoreOrigin) && personaRestoreBatchActive(userId, data.restoreOrigin));
     }
+    function personaCatalogClockAdvanced(userId) {
+      let path = /databases/$(database)/documents/users/$(userId)/aiPersonaCatalog/current;
+      let next = existsAfter(path) ? getAfter(path).data : null;
+      let previousRevision = exists(path) ? get(path).data.revision : 0;
+      return next is map && next.schemaVersion == 1
+        && next.revision is int && next.revision <= 9007199254740991
+        && next.revision == previousRevision + 1;
+    }
     function customPersonaAvailable(userId, personaId) {
-      return existsAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId))
-        && personaRestoreAvailable(userId, getAfter(/databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId)).data);
+      let path = /databases/$(database)/documents/users/$(userId)/aiPersonas/$(personaId);
+      return existsAfter(path) && personaRestoreAvailable(userId, getAfter(path).data);
     }
     function validPersonaReference(personaId) {
       return personaId == null || (personaId is string && (personaId in ['preset-atmospheric', 'preset-incisive', 'preset-intimate', 'preset-ironic', 'preset-epic', 'preset-unsettling']
         || (personaId.matches('^custom-[a-zA-Z0-9-]{1,93}$') && customPersonaAvailable(request.auth.uid,personaId))));
     }
     function validPersonaOverride(item) {
-      return item.keys().hasOnly(['traitId', 'value'])
+      let value = item.value;
+      // Both required fields are read; two keys exclude every additional field.
+      return item.size() == 2
         && item.traitId.matches('^[a-zA-Z0-9-]{1,100}$')
-        && item.value is int && item.value >= 0 && item.value <= 100;
+        && value is int && value >= 0 && value <= 100;
     }
     function validPersonaComplement(data) {
-      let overrides = data is map ? data.get('overrides', []) : [];
+      let overrides = data is map ? data.overrides : [];
       let size = overrides is list ? overrides.size() : -1;
-      return data == null ? true : (data is map && data.keys().hasOnly(['personaId', 'overrides'])
+      return data == null ? true : (data is map && data.size() == 2
         && data.personaId != null && validPersonaReference(data.personaId)
-        && data.keys().hasAll(['overrides']) && size >= 0 && size <= 16
+        && size >= 0 && size <= 16
         && (size <= 0 ? true : validPersonaOverride(overrides[0]))
         && (size <= 1 ? true : validPersonaOverride(overrides[1]))
         && (size <= 2 ? true : validPersonaOverride(overrides[2]))
@@ -443,12 +471,25 @@ service cloud.firestore {
       match /editorChatCatalogs/{id} { allow read, write: if false; }
       match /aiPersonaRestoreBatches/{projectId} { allow read: if isOwner(userId); allow write: if false; }
       match /personaGenerations/{requestId} { allow read, write: if false; }
+      match /aiPersonaCatalog/{catalogId} {
+        allow read: if isOwner(userId) && catalogId == 'current';
+        allow create, update: if isOwner(userId) && catalogId == 'current'
+          && request.resource.data.keys().hasOnly(['schemaVersion', 'revision'])
+          && request.resource.data.schemaVersion == 1
+          && request.resource.data.revision is int && request.resource.data.revision >= 1
+          && request.resource.data.revision <= 9007199254740991
+          && (request.method == 'create' ? request.resource.data.revision == 1
+            : resource.data.schemaVersion == 1 && request.resource.data.revision == resource.data.revision + 1);
+        allow delete: if false;
+      }
       match /aiPersonas/{personaId} {
         allow read: if isOwner(userId);
         allow create, update: if isOwner(userId) && validAIPersona(request.resource.data, personaId)
+          && personaCatalogClockAdvanced(userId)
           && (request.method == 'create' ? request.resource.data.revision == 1 && !request.resource.data.keys().hasAny(['restoreOrigin'])
             : request.resource.data.revision == resource.data.revision + 1
               && request.resource.data.createdAt == resource.data.createdAt
+              && request.resource.data.keys().hasAny(['restoreOrigin']) == resource.data.keys().hasAny(['restoreOrigin'])
               && request.resource.data.get('restoreOrigin', null) == resource.data.get('restoreOrigin', null)
               && personaRestoreAvailable(userId,resource.data));
         allow delete: if false;
@@ -635,6 +676,12 @@ service cloud.firestore {
       allow create: if isAuthenticated()
         && request.resource.data.authorId == request.auth.uid
         && request.resource.data.get('restoreOrigin', null) == null
+        && request.resource.data.get('hasLiteraryResources', false) == false
+        && request.resource.data.get('hasLiteraryArchiveResources', false) == false
+        && request.resource.data.get('hasLiteraryPublications', false) == false
+        && request.resource.data.get('literaryRevision', 0) == 0
+        && request.resource.data.get('literaryContextRevision', 0) == 0
+        && request.resource.data.get('literaryDependencyRevision', 0) == 0
         && validBookLocalLoreVersion(request.resource.data.get('localLoreVersion', null))
         && request.resource.data.localLoreVersion == 0
         && request.resource.data.get('hasSceneResources', false) == false
@@ -658,19 +705,12 @@ service cloud.firestore {
         && !exists(/databases/$(database)/documents/deletedBooks/$(bookId));
       allow update: if isOwner(resource.data.authorId)
         && request.resource.data.get('restoreOrigin', null) == resource.data.get('restoreOrigin', null)
+        && bookServerState(request.resource.data) == bookServerState(resource.data)
         && preserveBookDates()
         && preserveBookLocalLoreVersion()
         && preserveWorkHistoryRevision()
-        && request.resource.data.get('hasSceneResources', false) == resource.data.get('hasSceneResources', false)
-        && request.resource.data.get('sceneRevision', 0) == resource.data.get('sceneRevision', 0)
-        && request.resource.data.get('hasNarrativeResources', false) == resource.data.get('hasNarrativeResources', false)
-        && request.resource.data.get('narrativeRevision', 0) == resource.data.get('narrativeRevision', 0)
-        && request.resource.data.get('hasProgressResources', false) == resource.data.get('hasProgressResources', false)
-        && request.resource.data.get('hasLoreResources', false) == resource.data.get('hasLoreResources', false)
-        && request.resource.data.get('editorialState', null) == resource.data.get('editorialState', null)
         && (resource.data.get('hasProgressResources', false) != true
           || request.resource.data.get('wordCount', 0) == resource.data.get('wordCount', 0))
-        && request.resource.data.get('sceneDeletionOperationId', null) == resource.data.get('sceneDeletionOperationId', null)
         && validPersonaReference(request.resource.data.get('personaId', null))
         && request.resource.data.get('universeId', null) == resource.data.get('universeId', null)
         && request.resource.data.authorId == resource.data.authorId
@@ -710,6 +750,7 @@ service cloud.firestore {
           && validPersonaComplement(request.resource.data.get('personaComplement', null))
           && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true;
         allow update: if isBookAuthor(bookId)
+          && bookStructureClockAdvanced(bookId)
           && resource.data.get('deleting', false) != true
           && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasProgressResources', false) != true
             || request.resource.data.diff(resource.data).affectedKeys().hasOnly(['title', 'actId', 'order', 'personaComplement', 'updatedAt']))
@@ -760,6 +801,78 @@ service cloud.firestore {
       match /narrativeControls/{id} { allow read, write: if false; }
       match /narrativeJobs/{id} { allow read, write: if false; }
       match /sceneLoreLinks/{id} { allow read, write: if false; }
+      match /literaryProduction/{id} { allow read, write: if false; }
+      match /literaryPlans/{id} { allow read, write: if false; }
+      match /literaryPlanLinks/{id} { allow read, write: if false; }
+      match /literaryGenerations/{id} { allow read, write: if false; }
+      match /literaryPreparationGates/{id} { allow read, write: if false; }
+      match /literaryPreparationGateVersions/{id} { allow read, write: if false; }
+      match /literaryAutocompleteRequests/{id} { allow read, write: if false; }
+      match /literaryAutocompleteReservations/{id} { allow read, write: if false; }
+      match /literaryAutocompleteApplications/{id} { allow read, write: if false; }
+      match /literarySequenceJobs/{id} { allow read, write: if false; }
+      match /literaryPassageInspections/{id} { allow read, write: if false; }
+      match /literaryWorkflowJobs/{id} { allow read, write: if false; }
+      match /literaryDraftJobs/{id} { allow read, write: if false; }
+      match /literaryDraftUnits/{id} { allow read, write: if false; }
+      match /literaryDraftReceipts/{id} { allow read, write: if false; }
+      match /literaryIntegrationRechecks/{id} { allow read, write: if false; }
+      match /literaryIntegrationRecheckChapters/{id} { allow read, write: if false; }
+      match /literaryImpactControls/{id} { allow read, write: if false; }
+      match /literaryImpactChecks/{id} { allow read, write: if false; }
+      match /literaryImpactDecisions/{id} { allow read, write: if false; }
+      match /literaryImpactDecisionVersions/{id} { allow read, write: if false; }
+      match /literaryImpactJobs/{id} { allow read, write: if false; }
+      match /literaryChatContexts/{id} { allow read, write: if false; }
+      match /literaryChatTurns/{id} { allow read, write: if false; }
+      match /literaryLegacyChatMessages/{id} { allow read, write: if false; }
+      match /literaryLegacyChatApplications/{id} { allow read, write: if false; }
+      match /literaryPublications/{id} { allow read, write: if false; }
+      match /literaryPublicationCandidates/{id} { allow read, write: if false; }
+      match /literaryPublicationChapters/{id} { allow read, write: if false; }
+      match /literaryPublicationUnits/{id} { allow read, write: if false; }
+      match /literaryPublicationBodies/{id} { allow read, write: if false; }
+      match /literaryPublicationRemovals/{id} { allow read, write: if false; }
+      match /literaryPublicationGuideDependencies/{id} { allow read, write: if false; }
+      match /literaryPublicationGuide/{id} { allow read, write: if false; }
+      match /literaryPublicationGuideVersions/{id} { allow read, write: if false; }
+      match /literaryPublicationGuideProofs/{id} { allow read, write: if false; }
+      match /literaryPublicationConfirmations/{id} { allow read, write: if false; }
+      match /literaryProgressNotes/{id} { allow read, write: if false; }
+      match /literaryProgressNoteVersions/{id} { allow read, write: if false; }
+      match /literaryChatApplications/{id} { allow read, write: if false; }
+      match /literaryApplications/{id} { allow read, write: if false; }
+      match /literaryImpactNodes/{id} { allow read, write: if false; }
+      match /literaryImpactLinks/{id} { allow read, write: if false; }
+      match /literaryImpactVisits/{id} { allow read, write: if false; }
+      match /literaryImpactWitnesses/{id} { allow read, write: if false; }
+      match /literaryFindingDecisions/{id} { allow read, write: if false; }
+      match /literaryFindingDecisionVersions/{id} { allow read, write: if false; }
+      match /literaryIntegrationUnitLinks/{id} { allow read, write: if false; }
+      match /literaryIntegrationSourceLinks/{id} { allow read, write: if false; }
+      match /literaryIntegrationJobs/{id} { allow read, write: if false; }
+      match /literaryIntegrationChapters/{id} { allow read, write: if false; }
+      match /literaryIntegrationSelectedChapters/{id} { allow read, write: if false; }
+      match /literaryIntegrationUnits/{id} { allow read, write: if false; }
+      match /literaryIntegrationArchitecture/{id} { allow read, write: if false; }
+      match /literaryIntegrationRequests/{id} { allow read, write: if false; }
+      match /literaryIntegrationResults/{id} { allow read, write: if false; }
+      match /literaryIntegrationNodes/{id} { allow read, write: if false; }
+      match /literaryIntegrationSequence/{id} { allow read, write: if false; }
+      match /literaryReviewJobs/{id} { allow read, write: if false; }
+      match /literaryReviewUnits/{id} { allow read, write: if false; }
+      match /literaryReviewAnalyses/{id} { allow read, write: if false; }
+      match /literaryProseRequests/{id} { allow read, write: if false; }
+      match /literaryProseApplications/{id} { allow read, write: if false; }
+      match /literaryMilestones/{id} { allow read, write: if false; }
+      match /literaryMilestoneUnits/{id} { allow read, write: if false; }
+      match /literaryPlanVersions/{id} { allow read, write: if false; }
+      match /literaryContractVersions/{id} { allow read, write: if false; }
+      match /literaryOperations/{id} { allow read, write: if false; }
+      match /literaryRestoreReviewResolutions/{id} { allow read, write: if false; }
+      match /literaryRestoreReviewOperations/{id} { allow read, write: if false; }
+      match /literaryRestoreReviewWithdrawals/{id} { allow read, write: if false; }
+      match /literaryBackupControls/{id} { allow read, write: if false; }
       match /workProgress/{id} { allow read, write: if false; }
       match /workWordSources/{id} { allow read, write: if false; }
       match /workWordGroups/{id} { allow read, write: if false; }
@@ -806,7 +919,13 @@ service cloud.firestore {
     }
 
     match /publicBooks/{bookId} {
+      function editorialPublicationManaged() {
+        return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLiteraryPublications', false) == true;
+      }
       function inlinePublicationWriter() {
+        return !editorialPublicationManaged() && inlineLorePublicationWriter();
+      }
+      function inlineLorePublicationWriter() {
         return get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
           && (!exists(/databases/$(database)/documents/publicBooks/$(bookId))
             || !get(/databases/$(database)/documents/publicBooks/$(bookId)).data.keys().hasAny(['sourcePublicationToken']));
@@ -835,6 +954,7 @@ service cloud.firestore {
         allow get: if canReadRevision(bookId, revisionId);
         allow list: if isBookAuthor(bookId);
         allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && !editorialPublicationManaged()
           && validRevision(request.resource.data)
           && (get(/databases/$(database)/documents/books/$(bookId)).data.get('hasLoreResources', false) == false
             || request.resource.data.keys().hasAll(['sourceLoreToken', 'sourcePublicationToken']))
@@ -849,24 +969,28 @@ service cloud.firestore {
         match /acts/{actId} {
           allow read: if canReadRevision(bookId, revisionId);
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && !editorialPublicationManaged()
             && validPublicAct(request.resource.data)
             && exists(/databases/$(database)/documents/books/$(bookId)/acts/$(actId))
             && get(/databases/$(database)/documents/books/$(bookId)/acts/$(actId)).data.order == request.resource.data.order
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == false;
           allow update: if false;
-          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && (!editorialPublicationManaged() || get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true);
         }
 
         match /chapters/{chapterId} {
           allow read: if canReadRevision(bookId, revisionId);
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && !editorialPublicationManaged()
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
             && validChapter(request.resource.data)
             && (request.resource.data.get('actId', null) == null
               || existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId)/acts/$(request.resource.data.actId)));
           allow update: if false;
-          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && (!editorialPublicationManaged() || get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true);
         }
 
         match /lore/{loreId} {
@@ -881,6 +1005,7 @@ service cloud.firestore {
           }
           allow read: if canReadRevision(bookId, revisionId);
           allow create: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+          && !editorialPublicationManaged()
             && get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) != true
             && existsAfter(/databases/$(database)/documents/publicBooks/$(bookId)/revisions/$(revisionId))
             && (request.resource.data.get('sourceEntityId', null) != null
@@ -889,7 +1014,8 @@ service cloud.firestore {
             && originalConsent()
             && validLore(request.resource.data);
           allow update: if false;
-          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId);
+          allow delete: if isBookAuthor(bookId) && !isCurrentRevision(bookId, revisionId)
+            && (!editorialPublicationManaged() || get(/databases/$(database)/documents/books/$(bookId)).data.get('deleting', false) == true);
         }
       }
     }

@@ -1363,9 +1363,343 @@
           "order": "ASCENDING"
         }
       ]
+    },
+    {
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "kind"
+        },
+        {
+          "order": "ASCENDING",
+          "fieldPath": "refId"
+        },
+        {
+          "order": "ASCENDING",
+          "fieldPath": "purpose"
+        }
+      ],
+      "collectionGroup": "literaryPlanLinks"
+    },
+    {
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "id"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "revision"
+        }
+      ],
+      "collectionGroup": "literaryPlanVersions"
+    },
+    {
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "order": "ASCENDING",
+          "fieldPath": "chapterId"
+        },
+        {
+          "order": "DESCENDING",
+          "fieldPath": "revision"
+        }
+      ],
+      "collectionGroup": "literaryPreparationGateVersions"
+    },
+    {
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "index",
+          "order": "ASCENDING"
+        }
+      ],
+      "queryScope": "COLLECTION",
+      "collectionGroup": "literaryMilestoneUnits"
+    },
+    {
+      "collectionGroup": "literaryIntegrationChapters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActOrder",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "chapterId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryIntegrationSequence",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "index",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryIntegrationRecheckChapters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "operationId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActOrder",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "chapterId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryIntegrationRequests",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "inputHash",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryFindingDecisions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "source.jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryFindingDecisionVersions",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "revision",
+          "order": "DESCENDING"
+        }
+      ]
+    },
+    {
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "fromKey",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "collectionGroup": "literaryImpactLinks"
+    },
+    {
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ],
+      "collectionGroup": "literaryImpactVisits"
+    },
+    {
+      "collectionGroup": "mutationHeads",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "scopeToken",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "state",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "__name__",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryPublicationCandidates",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActOrder",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "sortActId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "order",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "chapterId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryPublicationChapters",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "index",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryPublicationRemovals",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "chapterId",
+          "order": "ASCENDING"
+        }
+      ]
+    },
+    {
+      "collectionGroup": "literaryPublicationGuide",
+      "queryScope": "COLLECTION",
+      "fields": [
+        {
+          "fieldPath": "jobId",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "deleted",
+          "order": "ASCENDING"
+        },
+        {
+          "fieldPath": "id",
+          "order": "ASCENDING"
+        }
+      ]
     }
   ],
   "fieldOverrides": [
+    {
+      "collectionGroup": "literaryImpactControls",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryImpactControls",
+      "fieldPath": "jobId",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }]
+    },
+    {
+      "collectionGroup": "literaryImpactChecks",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryImpactChecks",
+      "fieldPath": "jobId",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }]
+    },
+    {
+      "collectionGroup": "literaryImpactDecisions",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryImpactDecisions",
+      "fieldPath": "jobId",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }]
+    },
+    {
+      "collectionGroup": "literaryImpactDecisionVersions",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryImpactDecisionVersions",
+      "fieldPath": "jobId",
+      "indexes": [{ "order": "ASCENDING", "queryScope": "COLLECTION" }]
+    },
     {
       "collectionGroup": "editorChatCatalogs",
       "fieldPath": "*",
@@ -1655,6 +1989,236 @@
           "queryScope": "COLLECTION_GROUP"
         }
       ]
+    },
+    {
+      "fieldPath": "expiresAt",
+      "indexes": [
+        {
+          "queryScope": "COLLECTION_GROUP",
+          "order": "ASCENDING"
+        }
+      ],
+      "collectionGroup": "literaryAutocompleteRequests"
+    },
+    {
+      "collectionGroup": "literaryIntegrationResults",
+      "fieldPath": "result",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryIntegrationResults",
+      "fieldPath": "sources",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryIntegrationRequests",
+      "fieldPath": "sources",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryIntegrationRequests",
+      "fieldPath": "manifest",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryFindingDecisions",
+      "fieldPath": "rationale",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryFindingDecisions",
+      "fieldPath": "correction.note",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryFindingDecisionVersions",
+      "fieldPath": "rationale",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryFindingDecisionVersions",
+      "fieldPath": "correction.note",
+      "indexes": []
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactJobs",
+      "fieldPath": "inventories"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactNodes",
+      "fieldPath": "node"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactNodes",
+      "fieldPath": "nodeKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactLinks",
+      "fieldPath": "link"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactLinks",
+      "fieldPath": "linkKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactVisits",
+      "fieldPath": "visit"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactVisits",
+      "fieldPath": "visitKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactVisits",
+      "fieldPath": "nodeKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactWitnesses",
+      "fieldPath": "fromVisitKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactWitnesses",
+      "fieldPath": "visitKey"
+    },
+    {
+      "indexes": [],
+      "collectionGroup": "literaryImpactWitnesses",
+      "fieldPath": "linkKey"
+    },
+    {
+      "collectionGroup": "literaryGenerations",
+      "fieldPath": "dependencies",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryProseRequests",
+      "fieldPath": "personaDependencies",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryAutocompleteRequests",
+      "fieldPath": "personaDependencies",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryDraftJobs",
+      "fieldPath": "personaDependencies",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryReviewJobs",
+      "fieldPath": "personaDependencies",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryChatContexts",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryChatTurns",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryLegacyChatMessages",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryLegacyChatApplications",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryProgressNotes",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryProgressNoteVersions",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryApplications",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryChatApplications",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublications",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationCandidates",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationChapters",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationUnits",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationBodies",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationRemovals",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationGuideDependencies",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationGuide",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationGuideVersions",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationGuideProofs",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPublicationConfirmations",
+      "fieldPath": "*",
+      "indexes": []
+    },
+    {
+      "collectionGroup": "literaryPassageInspections",
+      "fieldPath": "*",
+      "indexes": []
     },
     {
       "collectionGroup": "personaGenerations",

@@ -408,3 +408,50 @@ describe('aceite de texto confirmado pelo histórico', () => {
     );
   });
 });
+
+describe('autosave during uncertain atomic acceptance', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.restoreAllMocks();
+    localStorage.clear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+  it('preserves a local draft but does not flush it while the server outcome is unknown', async () => {
+    const save = vi.spyOn(storage, 'saveChapterContent').mockResolvedValue({ wordCount: 2 });
+    const { result, rerender, unmount } = renderHook(
+      ({ content, paused }) =>
+        useAutoSave({ bookId: 'b', chapterId: 'c', ownerId: 'a', content, paused, debounceMs: 10 }),
+      { initialProps: { content: 'original', paused: false } },
+    );
+    rerender({ content: 'newer local edit', paused: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+      await result.current.saveNow();
+    });
+    expect(save).not.toHaveBeenCalled();
+    expect(localStorage.getItem('writer:draft:a:b:c')).toContain('newer local edit');
+    unmount();
+    expect(save).not.toHaveBeenCalled();
+  });
+  it('resumes normal saving after a pending acceptance is canceled', async () => {
+    const save = vi.spyOn(storage, 'saveChapterContent').mockResolvedValue({ wordCount: 2 });
+    const { rerender } = renderHook(
+      ({ content, paused }) =>
+        useAutoSave({ bookId: 'b', chapterId: 'c', ownerId: 'a', content, paused, debounceMs: 10 }),
+      { initialProps: { content: 'original', paused: false } },
+    );
+    rerender({ content: 'newer local edit', paused: true });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(100);
+    });
+    expect(save).not.toHaveBeenCalled();
+    rerender({ content: 'newer local edit', paused: false });
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(10);
+    });
+    expect(save).toHaveBeenCalledOnce();
+    expect(save).toHaveBeenCalledWith('b', 'c', 'newer local edit', expect.any(Function), 'a');
+  });
+});

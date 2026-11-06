@@ -8,7 +8,12 @@ Este documento descreve como o código do `Writer Assistant` é organizado e as 
 `page-assistant` oferece propostas sobre capacidades transitórias da página,
 acionando somente handlers existentes após confirmação. A aplicação compõe as
 duas features por suas interfaces públicas. Sessões v2 e a ação `pageAssistant`
-usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-contextual-assistant.md).
+usam `generationApi`; veja a [ADR 0272](decisions/0272-project-creation-and-contextual-assistant.md). O contrato
+editorial opcional aparece pela interface pública de `literary-production` na
+criação de livros. `pageAssistant` compõe esse guia com a função pura canônica,
+confere identidade nativa/revisão/hash antes e depois do provedor e devolve o
+escopo exato para inspeção. Isso não confere permissão para mutações nem implica
+leitura integral do manuscrito.
 
 ## Princípios
 
@@ -4056,3 +4061,949 @@ Veja [primeiro acesso](first-use.md) e
 Não há certificação de produção: o piloto humano e o rollout deste incremento
 continuam pendentes. A execução de testes foi autorizada em 2026-11-03;
 consulte os resultados na evidência do incremento.
+
+## Mapa de impacto literário — motor interno
+
+O contrato puro de literaryImpactProtocol distingue consumo de fonte, composição
+ativa, associação de unidade planejada, vínculo narrativo, destino de decisão e
+preservação de versão. Os identificadores incluem escopo/livro/universo. Tokens
+de origem e versão são evidências capturadas, nunca autorização atual.
+
+literaryImpactLinks projeta somente metadata de composição, planejamentos,
+manifestos de contexto, vínculos nativos, integrações e decisões. Uma cena só
+entra na composição após conferir que seu pai é ativo e usa modo cenas.
+Referência de unidade não comprova leitura da prosa. Aresta de associação mantém
+essa incerteza nos passos seguintes; versão preservada permanece histórica.
+
+literaryImpactGraph é um motor interno transacional, ainda sem callable/UI.
+Coleções literaryImpactJobs/Nodes/Links/Visits/Witnesses são privadas e entram
+na coleta de exclusão do livro. Lotes de vínculos e adjacências têm até 32
+itens. Visitas são deduplicadas por fonte/unidade/efeito, sem profundidade na
+identidade, para que ciclos terminem. Testemunhas distintas são preservadas.
+Campos consultáveis usam hashes de largura fixa, evitando truncamento de índices.
+
+O produtor deve coletar TODOS os inventários registrados, conferir identidade
+nativa e fornecer readFence que cubra fontes E mudanças da topologia na mesma
+transação. O motor rejeita construção sem essa porta. Ainda falta implementar
+esse produtor/fence completo; não expor o motor com fence somente de manuscrito.
+A busca exige censo antes e depois do percurso. Completar dependências registradas
+não afirma ausência de impacto semântico, correção autoral ou prontidão pública.
+Testes foram escritos; sua execução permanece adiada até o gate autorizado.
+
+### Inventário de impacto e revisão de vínculos
+
+literaryDependencyClock prepara a revisão relacional dentro de cada tentativa
+transacional e grava literaryDependencyRevision junto do artefato. Não usa cache
+por objeto Transaction, pois esse objeto pode ser reutilizado por retries do
+Firestore. O clock não avança updatedAt nem literaryContextRevision e não entra
+nos contratos de contexto de escrita ou de integração.
+
+Os produtores literários de propostas, prosa, revisão, redação, autocomplete,
+integração e decisões já avançam esse clock. A criação de solicitações/unidades
+e a gravação de SourceLinks da integração também avançam; a reconferência que
+reconstitui índices faz o mesmo. A limpeza de autocomplete incrementa a revisão
+do pai vivo, sem recriar uma raiz removida. Isso ainda não cobre o ciclo completo
+dos chats nativos/legados, que permanece uma capacidade obrigatória pendente.
+
+Rules reservam o clock ao servidor e exigem avanço de updatedAt da raiz na mesma
+gravação SDK de capítulo, inclusive metadata. Os escritores atuais de capítulos
+e organização já atualizam essa raiz em transação. Essa regra precisa entrar no
+gate de compatibilidade antes da integração; nenhuma implantação foi executada.
+
+literaryImpactFence reautoriza todos os volumes e todos os universos distintos
+vinculados a eles, mantendo nascimento nativo e clocks próprios no token.
+literaryImpactGraph agora conserva universeIds para esse conjunto, sem presumir
+um único universo para uma série. A coleta metadata de
+literaryImpactInventory cobre 16 coleções registradas de livro, com projeções
+fechadas, uma linha por página e identidade da linha preservada. Não lê
+manuscrito, relatório, prompt, justificativa nem instrução inline de persona.
+
+As páginas retornam vínculos candidatos e pendências explícitas. Cada item
+mantém sourceIdentitiesVerified false até a resolução autoritativa das origens;
+coleção vazia só encerra aquela coleção. Ainda faltam gerações editoriais,
+chats, origens de personas, publicação, o registro integral de inventários e a
+orquestração/reconferência antes de declarar cobertura global. Não montar um
+censo completo usando apenas a lista de coleções já suportadas.
+
+### Dependências de gerações e conferência de origens
+
+As novas gerações literárias guardam dependencies v1 separado do snapshot:
+nascimento do livro, revisão do contrato, identidade/revisão dos planejamentos
+e referências com identidade, versão e hash de corpo quando já capturado.
+O campo não contém rótulos, prosa, notas, respostas nem configuração secreta
+de transporte; não tem índices automáticos. A origem de cada plano de apoio
+inclui seu nascimento nativo, mesmo quando ID e número de revisão se repetem.
+
+O inventário agora cobre 17 coleções de livro, incluindo literaryGenerations.
+Registros antigos sem dependencies ou de outra encarnação do livro ficam com
+pendência explícita, sem abrir snapshots para recuperar rótulos derivados.
+SourceLinks novos/reconferidos da integração também guardam o formato da
+prova e seus tokens próprios. Hash de referência, hash de corpo e identidade
+de um plano não são comparados como se fossem o mesmo formato.
+
+literaryImpactVerification confere um vínculo por passo: referências nativas,
+planos do contexto de escrita e contrato atual. Distingue versão alterada,
+origem recriada, concessão capturada divergente e formato não conferido.
+literaryImpactRecordVerification primeiro reconstrói a aresta de um registro
+nativo com o mesmo recordToken/linkId; não aceita uma captura substituta do
+consumidor. A consulta pontual não encerra o inventário da coleção.
+
+A conferência não retorna nomes nem manuscrito e não comprova leitura integral.
+As referências não locais usam projeção explícita de metadados; o C1 de lore
+local conserva a leitura limitada do registro inline legado quando necessária,
+sem payload chunks. Histórico, hash de capítulo, destinos de achados, personas
+e vínculos sem captura ainda exigem seus verificadores específicos.
+
+A composição compartilhada normaliza scopeId nulo para o livro/universo atual
+e rejeita versões/concessões conflitantes da mesma fonte. Uma inserção posterior
+não pode ocultar o conflito. Isso vale tanto para geração editorial quanto para
+o contexto de escrita do editor. A semântica de subject continua preservando
+intenção sem exigir a mesma revisão da prosa.
+
+### Fontes de texto, composição e destinos de achados
+
+literarySourceOrigins centraliza as fórmulas nativas de identidade de prosa e
+destino editorial, mantendo os tokens anteriores. O autocomplete acrescenta
+chapterIdentityToken, ligado ao nascimento nativo do livro e capítulo. Entrega
+e aplicação exigem a mesma origem. Pedido antigo sem esse campo pede captura
+nova; um capítulo recriado com o mesmo ID/texto não recebe a sugestão anterior.
+
+literaryImpactTextVerification confere history-source de cenas por origem,
+versões precisas e cabeçalho body/hash/revision, sem carregar prosa. O formato
+prose-assembly confere separadamente a composição do capítulo contra o header
+nativo do pedido. Ler a mesma cena não prova que a ordem/contexto do capítulo
+permaneceu a mesma.
+
+content-hash exige a identidade de capítulo antes de abrir o conteúdo. Para
+inline, calcula hash do texto limitado; para chunks, usa o manifesto e binding
+nativos validados pelo opener. Os resultados distinguem manuscriptRead e
+byteIntegrityChecked: um manifesto/cabeçalho não é uma auditoria de bytes.
+Nenhuma dessas verificações constitui revisão editorial ou passagem de gate.
+
+literaryImpactFindingVerification respeita o formato do baseline. Referências
+nativas usam identidade/versão próprias; plano/contrato conferem primeiro o
+nascimento nativo e só depois o hash do conteúdo editorial. Isso não confirma
+que uma correção foi aplicada, que o problema desapareceu ou que a integração
+sucessora foi aceita.
+
+Na reconferência de registro, a origem física da própria linha (ato, capítulo,
+cena ou planejamento) pode ser provada pelo recordToken com nascimento/versão
+nativos. Essa evidência não resolve a encarnação histórica do destino da
+associação nem certifica integridade dos bytes ou qualidade do texto.
+
+Os cenários estão escritos e aguardam o gate autorizado. O mapa global ainda
+depende de personas/chats, inventário integral e orquestração/UI.
+
+### Origens de personas e clock do catálogo
+
+literaryPersonaDependencies normaliza uma projeção fechada das provas nativas:
+owner/target/resource, bindings, perfis, identidades, revisões e stamps. Não
+contém instrução compilada, nome, descrição nem traits livres do perfil.
+Bindings conservam apenas IDs e overrides numéricos normalizados pelo contrato
+nativo. As provas compostas devem corresponder aos hashes de leaves/proof
+originais; o formato não substitui a autorização corrente.
+
+Prosa, autocomplete, redação e revisão passam a persistir personaDependencies
+na criação já coberta pelo clock relacional. Pedidos antigos sem essa projeção
+permanecem pendentes de recuperação/conferência. O inventário não abre
+instruções ou snapshots antigos para preencher uma origem que não pode provar.
+
+O grafo distingue persona (escopo do usuário) de personaBinding (escopo do
+livro, ID virtual book/chapter). Isso evita usar o agregado do manuscrito como
+se fosse o vínculo de estilo. literaryImpactPersonaVerification reutiliza o
+reader nativo metadata-only, inclusive a disponibilidade de restauração;
+bindings são conferidos por nascimento e configuração sem ler prosa.
+Arquivamento/recriação de perfil não reautoriza outputs históricos.
+
+users/{uid}/aiPersonaCatalog/current tem apenas schemaVersion/revision. O SDK
+salva perfil e próximo contador na mesma transação; Rules exigem o avanço e
+protegem formato, incremento e escopo. O servidor prepara cada avanço dentro
+da tentativa, sem cache por Transaction. Ativações de bibliotecas restauradas
+de livros/aventuras também avançam o catálogo quando disponibilizam perfis.
+Preparação/cancelamento de perfis ainda invisíveis não publica disponibilidade;
+as APIs nativas só limpam esses lotes enquanto preparing.
+
+O fence de impacto inclui nascimento/versão do catálogo, definição pública dos
+presets e personaId/personaRevision dos livros. O contador não entra nos tokens
+semânticos da geração nem debita créditos. Uma edição de perfil selecionado
+continua invalidando sugestões por sua prova nativa, como antes.
+
+Cliente/Rules/writers de ativação precisam de liberação coordenada. Clientes
+antigos sem o contador deixam de salvar perfis após a regra; nenhuma
+implantação ocorreu. Cenários de serviço, domínio e Rules foram escritos,
+sem execução, conforme o gate adiado.
+
+### Índice privado de contextos nativos do chat literário
+
+`literaryChatContextIndex.mjs` prepara planos transacionais internos para
+`books/{bookId}/literaryChatContexts/{hash(uid,contextId)}`. O fechamento
+ready do chat grava índice e revisão de dependências junto do cabeçalho e
+corpo nativos. O cancelamento por exclusão remove o índice imediatamente;
+a limpeza terminal também cobre operações iniciadas antes dessa mudança.
+Ambos os caminhos preservam recibos, controles de encarnação e leituras
+antes das escritas. A limpeza tardia não altera uma raiz de outro autor.
+
+O índice só guarda fechamento normalizado, tokens, locators e dependências
+de persona já compiladas. Rules bloqueiam SDK; indexação automática é
+desabilitada; a exclusão integral do livro inclui a coleção.
+`literaryImpactChatContext.mjs` confronta o índice com projeção explícita
+do cabeçalho nativo (ready/consumed, identidade, manifesto e ausência de
+cleanup), sem abrir os corpos privados. A fonte da cena usa o esquema
+`native-chat-target`, resolvido por `readEditorChatSource` sem conteúdo.
+Provas de lore nativo ainda ficam unknown e geram pendência explícita;
+não são reinterpretadas como provas literaryReferences.
+
+É uma fonte adicional do inventário, não censo de todos os chats. Ainda
+faltam índices de turnos/histórico, legados, levantamento autorizado de
+contextos anteriores e fence de todo o ciclo de vida das conversas.
+Não liberar certificação de completude usando apenas esses registros.
+Código e cenários de domínio/Rules adicionados sem executar validações.
+
+### Proveniência dos turnos e lore nativos no mapa de impacto
+
+literaryChatLoreDependencies.mjs captura somente reference, scopeToken,
+entityIdentityToken, capturedStamp e token de versão com domínio próprio.
+Os dados vêm do snapshot autorizado já usado na geração. A projeção exige
+correspondência de um para um com as folhas de lore do fechamento, sem
+misturar identidades de literaryReferences. O novo leitor interno
+readEditorChatLoreOrigin reutiliza os guards nativos (incluindo tombstones
+e reservas do lore local), com projeções sem nome/resumo/detalhes e sem chunks.
+
+literaryChatTurns registra os metadados de origem no mesmo claim de
+editorChatGeneration. ContextOrigins retém o fechamento direto, as provas de
+persona e as versões de lore; historyOrigins retém turnId/attemptToken/
+closureHash dos turnos selecionados pelo histórico nativo. Nenhum prompt,
+resposta, pergunta própria, histórico textual ou instrução é copiado.
+A closure transitiva nativa continua intacta no cabeçalho do turno.
+Contexto direto ou turno histórico sem índice é uma pendência de completude.
+
+literaryImpactChatTurn confronta conversa e turno nativos por máscaras
+explícitas antes de projetar. O caminho source -> resposta anterior ->
+nova resposta preserva dependências transitivas. O esquema native-chat-turn
+confere a identidade da resposta anterior e de sua conversa por metadados;
+não abre turnBodies/turnQuestions nem concede leitura desses dados.
+native-chat-lore confere concessão/identidade/stamp pelo leitor nativo.
+ManuscriptRead/editorialReview/byteIntegrityChecked continuam false.
+
+O controle nativo de catálogo foi extraído para editorChatCatalog.mjs,
+mantendo a exportação prepareEditorChatCatalogUpdate em Conversations.
+Seu fence usa revisão e nascimento/versão do controle; não entra em tokens
+semânticos de escrita/integração nem em débitos. O mapa observa assim o ciclo
+de vida nativo sem manter outro relógio paralelo para os estados dos turnos.
+
+Na limpeza de cabeçalhos de livros, páginas de23 permitem excluir cada
+índice correspondente e preservar o limite nativo de50 escritas. As outras
+fases mantêm47; aventuras não criam esses índices. DeletedDocuments também
+conta os índices realmente removidos. Tokens divergentes protegem sucessoras
+e a limpeza nunca avança a raiz de outro autor. Rules bloqueiam os novos
+índices, indexação automática é desabilitada e deleteSceneBook inclui-os.
+Tudo permanece sem execução de validações nesta etapa.
+
+### Índice de aplicações literárias aceitas
+
+literaryApplicationIndex.mjs prepara literaryApplications no mesmo commit
+do aceite de Prose/Autocomplete, antes de qualquer escrita. A chave inclui
+autor, livro, tipo e operação. Identidades usam os nascimentos nativos de
+livro/pedido/destino; a confirmação guarda hash do recibo projetado sem saldo
+nem conteúdo. O pedido recebe appliedOutputToken, hash da proposta aceita,
+junto de stateapplied/paid. APIs de recibos mantêm seus formatos públicos.
+
+As dependências preservadas são manifest/persona e os tokens nativos das
+leituras de capítulo/cena/composição/cena anterior. Elas permitem reconstruir
+source->pedido->destino mesmo após a expiração do pedido. Não se altera a
+retenção nativa de prompts ou resultados. A confirmação e seu replay mantêm
+a cobrança atual; literaryDependencyRevision avança com o novo índice.
+A criação de recibo de abandono do autocomplete também avança esse relógio,
+uma vez por operação, sem gerar associação de aceite.
+
+literaryImpactApplication confere receipt/token e identidade do destino
+antes de produzir a aresta target. O esquema application-source verifica
+a encarnação do pedido vivo e seu appliedOutputToken. Se ele expirou, o
+recibo nativo e o registro atômico preservado são a evidência histórica;
+statuspreserved/sourceRepresentationpreserved-metadata/liveSourceAvailablefalse
+diferenciam esse caso de fonte viva atual. Nenhum caminho afirma equivalência
+do manuscrito atual, integridade dos bytes ou aprovação editorial.
+
+A verificação prose-assembly também aceita a origem reconstruída do índice,
+mantendo o domínio nativo dos tokens. Todas as leituras de grafo são
+projeções de metadados; o conteúdo aceito não é lido para compor o grafo.
+Rules bloqueiam a coleção, wildcard index é desabilitado e deleteSceneBook
+inclui sua limpeza. Casos escritos, ainda sem executar validações.
+
+### Aplicações do chat nativo
+
+literaryNativeChatApplication.mjs prepara literaryChatApplications para
+cenas de livros; aventuras/blocos retornam noop. O índice usa chave própria
+por autor/livro/operação, identidade nativa da resposta e do destino
+(incluindo nascimentos), locator do turno, suggestionHash/afterHash/revisão,
+hash do recibo nativo normalizado e metadados de origens disponíveis.
+O normalizador fecha todos os mapas e cruza target/resource/persona e as
+closures; nenhuma string de pergunta, resposta ou instrução é copiada.
+
+editorChatApply monta receiptResult e o recibo esperado normalizado antes
+das escritas, prepara o índice e avança literaryDependencyRevision na mesma
+transação de sceneTextWrite/saldo/catálogo/recibo. writeEditorChatReceipt
+continua emitindo o mesmo DTO. Replay não recria índices; reaplicação com
+nova operação mantém a cobrança nativa e a versão atual observada.
+
+literaryImpactNativeChatApplication confere o controle privado de operação
+settled/applySuggestion/confirmed, receiptToken, IDs/Hash/revisão e a
+identidade da cena. Depois projeta a associação target da resposta para a
+cena e as fontes diretas preservadas para a resposta. O verificador
+native-chat-application-source lê somente metadata do turno; se removido,
+o recibo/índice preservam evidência histórica com statuspreserved e
+liveSourceAvailablefalse. derivedBodyAuthorized éfalse em ambos os casos.
+Não se usa essa prova para reabrir a resposta ou atestar o texto atual.
+
+A projeção de origens compartilhada aceita consumerId separado do ID do
+registro, pois o nó da resposta sobrevive em diferentes aplicações.
+Verificadores de lore/histórico reconhecem o índice de aceite, conferindo
+o consumer correto por metadata. Histórico anterior aponta seus turnos,
+mas falta retenção integral das versões de suas origens transitivas:
+native-chat-applied-history-origins-incomplete impede declarar completude.
+Turnos antigos sem índice direto também mantêm uma lacuna explícita.
+
+A coleção é privada (Rulesfalse, sem índices automáticos), participa do
+inventário de metadados e da exclusão do livro. Limpeza de conversa apaga
+corpos e índices de turnos, sem apagar a proveniência do manuscrito aceito.
+Somente metadados dessa proveniência permanecem; nada de histórico textual.
+Testes de integração escritos no arquivo nativo de apply, sem execução.
+
+### Sinal de ciclo de vida dos chats legados
+
+literaryLegacyChatLifecycle.mjs prepara literaryDependencyRevision por
+mutações autorizadas de chapterChat. Confere o livro no tx e o capítulo
+atual por máscaras de metadados, sem corpo, pergunta ou credencial. A fase
+de limpeza final só avança um livro ainda pertencente ao mesmo autor;
+raiz ausente, em exclusão ou de outro dono retorna noop.
+
+chapterChat conecta esse plano antes de escrever criação, claim, histórico,
+conclusão/revogação, preferência, aplicação e os limites de edição/exclusão.
+Replay de mensagem concluída ou de recibo não grava outro relógio.
+Rascunhos próprios não integram esse inventário e não geram esse avanço.
+
+A exclusão marca deleting/busydeleting em tx antes do recursiveDelete.
+O dispatcher e load não tratam esse registro como conversa ativa;
+finish e os gates de entrega impedem callbacks tardios. A conclusão da
+limpeza atualiza o relógio novamente, sem alterar uma raiz de outro dono.
+Edição marca busyediting antes das remoções e conclui em tx conferindo o
+marcador; enviar não reutiliza uma sessão ainda em edição após seu prazo.
+Concluir um turno running também exige que ele ainda detenha busy.
+
+O protocolo legado de remoção continua usando operações longas fora da
+transação e ainda não tem job/recibo de recuperação próprios. Dois editores
+retomados após timeout e falhas parciais de recursiveDelete exigem fechamento
+posterior; não declarar inventário integral usando somente este sinal.
+Índices/versionamento de mensagens e aceites legados continuam pendentes.
+Os testes foram estendidos, ainda sem execução.
+
+### Operações legadas por páginas e recuperação
+
+legacyChatMutations.mjs substitui recursiveDelete no fluxo nativo conhecido
+de chapterChat: conversas têm somente messages folhas como descendentes.
+O journal fica em users/{uid}/chapterChats/{bookId}/chapters/{chapterId}/
+mutationJobs/{mutationId}, com ponteiro mutationHeads/{conversationId}.
+Ambos são privados pelo bloqueio existente chapterChats/** nas Rules.
+Receipts de aceite ficam no sibling receipts e não são removidos.
+
+Cada job vincula owner/book/chapter/conversation, scopeToken de nascimentos
+nativos do livro/capítulo, conversationToken de nascimento, token interno,
+fingerprint do comando, before, draftHash, estado, contagem e datas. Não há
+texto no journal. O draft do edit vai para o campo privado draft do parent.
+O início grava job/head/marcador do parent/clock juntos. Cada página lê tudo
+antes de excluir no máximo20 folhas e avançar job/clock. O vazio confirma
+finalização: edit preserva draft e limpa busy; delete remove o parent.
+Não há fase recursiva paralela que possa alcançar uma conversa recriada.
+
+Head/token e nascimento são reconferidos por página; chamadas simultâneas
+da mesma operação serializam pelo journal. Outra operação não substitui
+um head pendente. Replays com mutationId concluído não repetem remoção.
+Legacy callers sem mutationId podem retomar o head compatível, enquanto o
+cliente atual congela IDs por intenção. creationAvailable bloqueia recriação
+durante um job. Parent ausente com messages é suportado na exclusão.
+
+Cada callable executa até10 páginas, devolvendo metadata de continuação se
+necessário. O cliente chama resumeMutation com o mesmo ID, sem reenviar
+draft. load retorna pendingMutation antes de corpos; consulta de heads
+running no scopeToken atual, limitada a1, também encontra pais ausentes.
+O índice collection mutationHeads(scopeToken,state,**name**) foi adicionado.
+Não se presume ausência de operação porque a conversa sumiu.
+
+O hook retém mutationId em RAM por autor/livro/capítulo/conversa/intenção,
+ocupa loading durante a operação e descarta conclusão de outro escopo.
+Uma edição não substitui um draft local que mudou nem limpa um pedido
+posterior. draftEpoch avança no início do job; draft RPC confere a revisão
+observada, impedindo autosave atrasado após edit. Clientes sem esse campo
+continuam no epoch0, mas não sincronizam após uma edição até atualizar.
+Coordenar servidor/cliente no gate de liberação; nenhuma implantação ocorreu.
+
+Este protocolo cobre o corpus nativo de mensagens folhas. Nova subcoleção
+de mensagem exige ampliar o protocolo antes de ser persistida. Journals são
+metadados de controle, não evidência de completude de fontes do chat.
+Índices de mensagens/aceites, versões históricas e seus backfills ainda
+faltam; scripts de restore não devem reativar esses jobs numa nova cópia.
+Testes de kernel, serviço, autosave e ajustes de fixtures foram escritos;
+nenhum foi executado nesta etapa.
+
+## Chat legado — identidade e índice de origem
+
+A geração do chat de capítulo distingue messageInstance (intenção) de
+generationAttempt (execução). Callbacks BYOK e workers da plataforma conferem
+esses metadados antes de concluir; a recuperação local persiste apenas a
+instância. O índice privado literaryLegacyChatMessages nasce junto do claim e
+recebe manifestos diretos/herdados junto da captura de histórico. Ele guarda
+nascimentos nativos de livro/capítulo/conversa, nunca texto privado ou chave.
+A limpeza paginada remove o índice correspondente na mesma transação das
+mensagens e preserva outro índice cuja identidade/tentativa divergir.
+
+Os adaptadores do impacto conferem cabeçalhos nativos antes de projetar vínculos.
+Entradas não canônicas do contexto legado não certificam versões de lore/persona
+nem leitura integral de prosa. Fontes não registradas permanecem incompletas.
+Coleção server-only, sem índices de campos, incluída na exclusão nativa do livro.
+
+## Produção literária no transporte por setor
+
+As ações literárias usam o mesmo registro functionDomains da principal:
+generationApi recebe ações que chamam o modelo; planningApi recebe captura,
+estado, versões, aceites e reconciliação. A autorização continua em cada serviço,
+a chave só existe no setor gerador e os clientes usam domainCallable. A rotina
+horária existente também coleta autocomplete expirado. Integração em código,
+com testes finais ainda pendentes.
+
+## Progresso por artefato e retomada
+
+A área de produção apresenta registros separados de contrato, planejamento,
+preparação, redação, versões preservadas, revisão e integração. Cada item conserva
+identidade nativa, versão, estado da execução, aceite registrado, contadores
+próprios e eventual versão preservada. Nenhuma dessas informações gera um
+percentual único nem certifica publicação ou qualidade do manuscrito atual.
+As fontes devem ser reconferidas no fluxo correspondente.
+
+Bloqueios e próximo passo pertencem a um checkpoint privado do artefato. Cada
+salvamento cria uma versão e um recibo; conflito de fonte ou de revisão exige
+comparação explícita. O rascunho pode ser preservado ao escolher a nova base.
+Pedidos sem resposta mantêm a identidade e podem ser consultados sem reenvio ou
+repetidos com o mesmo conteúdo. Recriar um artefato não herda seu checkpoint.
+
+Os aceites legados de chat agora conservam metadados de origem junto do recibo
+nativo, sem perguntas/respostas extras no índice. Excluir a conversa conserva
+evidência histórica da alteração aceita, sem conceder acesso ao corpo excluído.
+
+Estas mudanças estão implementadas em código e com cenários escritos; os testes,
+as Rules e a interface ainda não foram executados/validados. Publicação versionada,
+guia sem spoilers por volume e portabilidade dos artefatos seguem em implementação.
+
+## Manifesto de publicação versionada — em implementação
+
+O compilador prepara uma edição identificada por versão, com escopo de capítulo,
+ato ou livro. Ele confere as fontes contra a integração aceita, monta somente a
+prosa canônica, preserva a formatação segura e reconfere cada fonte, capítulo,
+ato e a composição final do livro. Capítulos que sairiam da edição ficam em um
+registro explícito de remoções; a edição corrente permanece ativa durante a
+preparação.
+
+Manifesto preparado não significa publicação confirmada. A compilação ainda
+não troca o ponteiro público, não registra URL de sucesso e não muda o livro
+para publicado. O guia do leitor, sua proteção por progresso de cada volume,
+a confirmação atômica e a interface deste fluxo continuam pendentes.
+
+A adoção da publicação gerenciada usa hasLiteraryPublications, independente da
+adoção dos outros recursos editoriais. Após essa adoção, alterações diretas no
+staging pelo SDK são bloqueadas. O fluxo precisa ser fechado e validado antes
+de uma entrega; nenhum teste, emulador ou navegador foi executado nesta etapa.
+
+## Consulta do mapa editorial
+
+`literary-production` compõe a ordem canônica de atos/capítulos pela interface
+pública de livros e lê as páginas privadas de `readLiteraryBookMapPage` em
+`planningApi`. `literaryBookMap.mjs` reautoriza cada chamada, limita consultas e
+respostas e vincula a travessia aos metadados nativos da raiz, universo e controle
+cronológico. `readLiteraryPlanSourceViews` reaproveita a checagem canônica das
+fontes. A visualização não concede autorização para IA ou mutações nem comprova
+leitura integral. O [contrato do mapa](tasks/producao-literaria/02-mapa-global.md)
+registra o alcance da prova e da retomada. Não há novo armazenamento ou endpoint
+público independente: a ação pertence ao setor de planejamento existente.
+
+## Auditoria global da arquitetura editorial
+
+`literaryArchitectureSources.mjs` projeta as fontes estruturais e de planejamento em JSON
+canônico, com provas de nascimento/versão e autorização nativa. `literaryIntegration.mjs`
+percorre o inventário privado `literaryIntegrationArchitecture`, lê segmentos e só libera a
+síntese global após a conferência terminal. `literaryIntegrationRequestRead.mjs` compartilha
+a autorização de pedidos com integração, reconferência e achados. A reconferência refaz o
+censo, incluindo adições e remoções. Rules negam todo acesso SDK ao novo inventário e a
+exclusão de livro remove também os registros órfãos. Consulte o
+[contrato e os limites](tasks/producao-literaria/03-auditoria-global.md): metadados de lore
+não representam leitura dos seus corpos, e cobertura arquitetural não é leitura integral
+do manuscrito.
+
+## Destinos estruturais de achados literários
+
+`literaryArchitectureProtocol.mjs` fornece identidade composta canônica sem I/O.
+`literaryFindingTargets.mjs` diferencia prova estrutural de texto/revisão editorial e usa
+as mesmas projeções autorizadas da auditoria. A sucessora registra `architecture-source`
+em `literaryIntegrationSourceLinks`; a confirmação exige identidade, hash semântico e
+cobertura global íntegros. O contrato de impacto conserva a projeção como nó distinto,
+ligado por composição ao recurso nativo e sem alegar leitura de prosa. Paginação de
+destinos reutiliza `getLiteraryFindingContext`, com prova de que cada fonte foi lida.
+Não há coleção ou endpoint novo. Os limites estão no
+[contrato do incremento](tasks/producao-literaria/04-reconciliacao-estrutural.md).
+
+## Fontes literárias entre volumes
+
+`literaryVolumeProtocol.mjs` valida a identidade composta de livro/tipo/unidade sem I/O.
+`literaryReferences.mjs` autoriza a origem e emite provas com nascimento nativo do livro e
+recurso. `literaryAIContext.mjs` reutiliza os leitores nativos de corpo e conserva fontes
+com IDs de documento distintos. Escrita, geração, integração e reconferência mantêm o
+escopo da origem. O impacto representa a unidade no próprio livro, sem converter prova
+de metadata em leitura de texto. `listLiteraryVolumeBooks` pertence a `planningApi`, sem
+coleção, índice ou Function nova. Leia os
+[limites e testes](tasks/producao-literaria/05-vinculos-entre-volumes.md).
+
+## Autorização delimitada da redação
+
+`literaryDraftExecution.mjs` valida o contrato puro de execução supervisionada/contínua.
+O job de `literaryDrafting` conserva limites, gasto e revisão do controle. A verificação de
+orçamento/pausa/revisão usa o mesmo hook transacional de prosa, crédito e checkpoint;
+a aplicação automática recebe ID determinístico por job/proposta. `setLiteraryDraftExecution`
+usa CAS e recibo em `literaryOperations`, sem alterar as fontes semânticas ou o modelo.
+O cliente recupera `draftExecution` pelo journal de metadados e descarta respostas antigas
+quando um controle posterior vence. Nenhuma coleção ou Rule nova foi introduzida.
+Consulte o [escopo e as invariantes](tasks/producao-literaria/06-redacao-continua-delimitada.md).
+
+## Modo operacional do contrato editorial
+
+`literaryCollaborationProtocol.mjs` valida a escolha versionada e pura do autor.
+`literaryCollaboration.mjs` lê revisão/policy por projeção privada, sem interpretar
+observações livres. O contrato mantém a propriedade opcional para preservar fingerprints
+legados. Jobs de redação/prosa capturam a revisão; aplicação reconfere a escolha na
+transação nativa. Orientação mantém sugestões/análises e impede aplicação de prosa;
+supervisão impede conceder contínuo, e contínuo exige a autorização delimitada existente.
+Inferência/geração de contrato não concedem esse modo pelo provedor. A interface usa a
+escolha salva, separada do rascunho. Esse bloco não acrescentou coleção ou callable; o registro atual está em functionDomains.
+Leia o [contrato operacional e seu alcance](tasks/producao-literaria/07-modos-operacionais.md).
+
+## Coordenação privada do ciclo de capítulo
+
+`literaryWorkflow.mjs` compõe preparação, redação, revisão em duas camadas e marcos,
+sem duplicar o escritor de texto/crédito. `literaryWorkflowContracts.mjs` confere origem,
+limites e progresso dos filhos. O job registra intenção antes de ativar seu nascimento
+nativo; avanços/controles congelam a origem e usam recibos de metadados por operação.
+Pausa/cancelamento coordenam os filhos atomicamente. Recriação, contrato novo ou modelo
+incompatível não rearmam a autorização. Reconciliação preserva gastos/primeira versão;
+revisão aceita é reutilizada quando somente o histórico exige reconferência.
+
+`literaryWorkflowJobs` é privada e participa do coletor de órfãos de cena/livro. O registro
+adota hasLiteraryResources. A API usa seis ações nos setores existentes (422 no registro
+completo), sem nova Function individual, índice ou dependência. O cliente usa o journal
+metadata existente, abre checkpoints nativos por ID e preserva seus estados ao ocultá-los.
+Leia [contrato, condições e limites](tasks/producao-literaria/08-ciclo-editorial-capitulo.md).
+
+### Condições de entrada dos ciclos literários
+
+O núcleo de passagem reutiliza os leitores nativos compartilhados de revisão e
+integração. Preflight e registro fixam predecessor, versões e identidades; os guards
+filhos reconferem o predecessor antes de aplicar texto/crédito. Ao atravessar um ato,
+a integração completa aceita é verificada até a entrada, sem promover seu fence a
+aprovação permanente do manuscrito futuro. Consulte o
+[contrato e escopo restante](tasks/producao-literaria/09-condicoes-de-passagem.md).
+
+A seleção de passagem usa descoberta metadata paginada por livro na listagem existente
+de ciclos. chapterId null amplia apenas o escopo dessa consulta privada; cada item
+reconfere ator e origens nativas antes de projetar título/agrupamento atuais. Nenhum
+corpo/instrução acompanha opções. A UI congela a seleção antes do preflight e conserva o
+mesmo pedido em recuperação; detalhes no [incremento10](tasks/producao-literaria/10-selecao-de-passagem.md).
+
+### Execução literária por unidades e orçamento agregado
+
+O núcleo interno de literarySequenceJobs vincula ciclos aos capítulos nativos
+selecionados e conserva o consumo comum no mesmo commit de prosa/crédito/recibo.
+Propostas da sequência têm dono de aplicação privado; os atalhos genéricos não retiram
+a proposta do ledger. O contrato puro de limites/fases foi separado com os reexports
+anteriores preservados. Pausar/cancelar fecha o ciclo/filhos da unidade em transação.
+O driver serial/outcomes nativos, o cliente tipado, a recuperação metadata e a UI de
+seleção/consentimento estão compostos. Seis ações de consulta/registro/controle ficam em
+planningApi; advance e resumeOperation ficam em generationApi. O registro passa a 430
+ações em 16 setores, sem exportar hooks ou complete internos. Ver [ADR0274](decisions/0274-literary-sequence-budget.md)
+e [estado do incremento11](tasks/producao-literaria/11-orcamento-agregado-nativo.md).
+
+literarySequenceDriver registra uma única ação antes de cada produtor e congela o wire
+no ledger privado. Hooks nativos verificam o passo original em ativação/avanço/controle;
+fechamento de unidade e recibo movem o cursor atomicamente. Outcomes são históricos e
+metadata-only; a retomada de um pedido não promove contexto atual a aceite. Ver o
+[driver e sua fronteira pública ainda pendente](tasks/producao-literaria/12-driver-serial-e-outcomes.md).
+
+A recuperação de sequência conserva método/hash/revisão e confere requestHash do recibo
+nativo antes de retirar a dívida local. Consulta nunca produz; retomar exige uma ação
+separada e usa somente o pedido privado congelado no servidor. A descoberta lê metadata
+paginada, com cursor da página varrida e reautorização por livro/nascimento. O painel tem
+sessão por conta/livro e ignora ACK antigo. Ver a [ponte de recuperação e limites de
+exposição](tasks/producao-literaria/13-cliente-e-recuperacao-de-sequencias.md).
+
+LiterarySequencePanel captura prévia antes do consentimento e coordena o loop por
+checkpoints nativos. O ciclo gerenciado preserva decisões autorais e os painéis filhos
+expõem só aceites/inspeção pertinentes; avanço e orçamento passam pelo pai. Troca de
+conta/livro encerra a sessão visual. Recuperar sem diário local registra metadata do
+outcome autorizado antes de retomar o mesmo ticket. Ver [interface e setores da
+sequência](tasks/producao-literaria/14-interface-e-setores-de-sequencia.md).
+
+## Inspeção da ordem para passagem editorial
+
+O setor planningApi compõe quatro ações de inspeção pela factory de workflow, sem
+nova Function. literaryPassageInspections mantém censo/reconferência paginados da
+ordem nativa, com checkpoint constante em tamanho e CAS. A passagem opcional selecionada
+vincula o certificado nativo e recusa um ciclo predecessor que salte a unidade imediata.
+Rules negam SDK e o inventário de exclusão do livro remove os registros. Não é ainda a
+política obrigatória de publicação anterior. Ver o [incremento 17](tasks/producao-literaria/17-inspecao-da-predecessora.md).
+
+A recuperação da inspeção consulta uma origem nativa metadata antes do write-ahead e
+vincula expectedScopeToken ao fingerprint de criação. Cancelamento da intenção original
+pode criar reserva negativa permanente antes do registro, sem capacidade de ingresso.
+O cliente persiste cancelRequested monotonicamente e invalida ACK tardio em RAM.
+A quinta ação permanece em planningApi; ver o [incremento 20](tasks/producao-literaria/20-recuperacao-nativa-da-inspecao.md).
+
+## Interface e recuperação do mapa de impacto
+
+LiteraryImpactPanel compõe seleção nominal pelos serviços públicos de planejamento,
+prévia e investigação no planningApi. useLiteraryImpact coordena write-ahead, consulta
+original, confirmação fresca, lotes explícitos limitados e cancelamento independente.
+O journal dedicado guarda somente intenção/correlação metadata sob CAS integral e
+Web Locks curtos; resolução completa fica em RAM. Abrir o painel não envia RPC.
+
+A ação cancelLiteraryImpactOperation cria fence permanente no mesmo recibo do produtor
+original, conferindo método/conta/livro/nascimento. Não cancela o mapa inteiro nem
+revoga índices canônicos preparados. Rótulos atuais são lidos por metadata autorizada,
+sem se tornarem nomes históricos ou cache local. Ver [ADR 0276](decisions/0276-literary-impact-recovery.md)
+e [incremento 28](tasks/producao-literaria/28-interface-e-recuperacao-do-impacto.md).
+Implementação local; testes e validação deste incremento ainda pendentes.
+
+## Censo de origens nativas do impacto
+
+literaryImpactNativeAudit examina onze segmentos privados em páginas de um cabeçalho,
+com projeções fixas e consultas de grupo limitadas por referências do UID. Isso permite
+identificar índices ausentes e filhos órfãos sem abrir conteúdo. O controlador repete
+as provas nas três passagens e persiste somente checks metadata e associações possíveis.
+
+literaryImpactCatalog observa catálogo ausente com conversas como untracked, sem criar
+clock substituto ou alterar o leitor estrito dos escritores. O registro de capacidades
+versão 2 invalida mapas antigos sem rebase; notas próprias e cancelamento preservam
+seus contratos. Ver [ADR 0277](decisions/0277-literary-native-origin-census.md).
+Testes SDK dos limites por UID/paginação e gates integrais seguem pendentes.
+
+## Núcleo portátil do processo editorial
+
+bookEditorialProtocol é puro e browser-safe, com DTOs fechados e referências lógicas.
+Os campos canônicos de contrato/planejamento são compartilhados por
+literaryEditorialFields/literaryPlanFields, preservando os exports nativos anteriores.
+bookEditorialRemap usa o projetor nativo de recursos e cria identidades editoriais
+por nova cópia; referências externas ficam indisponíveis e toda restauração exige
+revisão, execução desabilitada e publicação privada.
+
+Os módulos ainda não habilitam seção/callable/produtor. A versão ativa do pacote é a
+anterior; integração requer captura consistente, framing/semântica, inventário/cleanup,
+materialização e ativação completos. Ver [ADR 0278](decisions/0278-literary-editorial-portability.md).
+
+O leitor do pacote distingue archive v1 (sete seções) e v2 (editorial ao final),
+sem alterar o produtor padrão v1. bookEditorialContent integra DTOs, índice metadata,
+referências paginadas e ciclos incrementais à máquina compartilhada. O servidor
+confere a versão declarada no upload contra o manifesto real. UI/reserva/preparação/
+ativação continuam fechadas para v2 até concluir captura e materialização nativas.
+Ver [ADR 0279](decisions/0279-literary-editorial-package-reader.md); checks pendentes.
+
+literaryBackupFence observa identidade nativa da raiz e do marcador privado
+literaryBackupControls/current. literaryWorkflow grava o marcador explicitamente
+na mesma transação de seus cabeçalhos. A cobertura é workflow-headers-only; outras
+famílias/corpos não estão cobertos. Rules e inventário de exclusão incluem o recurso.
+Não há alteração do boot ou interceptação global. Ver [ADR 0280](decisions/0280-literary-workflow-backup-fence.md).
+
+O incremento 33 amplia literaryBackupFence a 11 famílias de escritores explícitos:
+workflow, sequence, draft, review, milestone, integration, publication, prose,
+impact, impactControl e generation. writeLiteraryBackupProcess valida pai/método
+antes de encaminhar os argumentos nativos e gravar o marcador na mesma transação.
+A observação continua process-headers-partial, sem habilitar captura. Checkpoints de
+publicação recebem o contexto explicitamente. deleteSceneBook reconfere o marcador
+no finish e repete a passagem literária se houve escrita tardia, antes de remover
+a raiz. Ver [ADR 0281](decisions/0281-literary-process-backup-writers.md); testes pendentes.
+
+bookEditorialProjection projeta contratos/fichas próprios com linhagem lógica
+current/version, datas preservadas e descritores sem sourceToken. bookEditorialCapture
+é um leitor interno transacional, metadata/partes até64KiB, fonte+clock privados e
+rechecagem por identidade nativa e referências autorizadas. Cabeça/versão idênticas
+retornam alias sem bytes. Não existe callable/producer ligado a esse leitor ainda.
+O schema compartilhado confere linhagem/tipo/revisão e preserva scope universe/id null
+somente em lore unavailable. Papéis de referência diferentes são preservados;
+apenas aliases equivalentes são condensados. Ver [ADR 0282](decisions/0282-editorial-native-capture-lineage.md).
+
+bookEditorialPreparationCapture é o caminho metadata-first de preparação, anterior
+ao get genérico no leitor de captura. Reautoriza manifesto e produz grupo histórico
+limitado ou placeholder sem corpo. BookEditorialDocument.preparation fecha critérios,
+IDs de evidência e claims históricos; linhagem de documento mantém papel por versão.
+As notas de progresso usam somente seu conteúdo próprio e metadata do vínculo, sem
+adotar origens alteradas. O leitor permanece interno e limitado a saved-editorial-
+records-only, com oito famílias. Ver [ADR 0283](decisions/0283-editorial-preparation-own-notes.md).
+
+bookEditorialDecisionCapture é o leitor de campos próprios de decisões de achados e
+impacto, com UID-first para impacto e vínculos verificados por metadata. O DTO decision
+preserva estados nativos/annotation/references, com linhagem e família imutável. Índices
+estruturais são descritores unavailable, sem mapper nativo. Hash de proofKind reference
+não vira contentHash de arquivo. O leitor interno soma 12 famílias; produtores continuam
+desabilitados. Ver [ADR 0284](decisions/0284-editorial-own-decisions-capture.md).
+
+bookEditorialProseCapture projeta a família interna prose a partir de cabeçalhos
+metadata-first e do port de autorização nativa de literaryProse, antes do cache.
+Preserva instrução própria separada de derivados revogados, cobertura fechada de
+segmento, offsets UTF-16 e vínculos entre artefatos. Identidades usam o nascimento
+do pedido; checkpoints são históricos e sem execução. O leitor soma treze
+famílias, sem callable ou produtor novo. Ver [ADR 0285](decisions/0285-editorial-prose-capture.md).
+
+bookEditorialGenerationCapture reutiliza readLiteraryAICaptureContext, o gate
+estrito compartilhado com literaryAI, antes do cache original. Entrada própria é
+separada de análise/proposta; artefatos não adotados têm revision null e não têm
+lineage. Procedência usa escopo/nascimento original; metadados não concedem acesso.
+Relatórios selected-sources mantêm contagem nativa, e offset desconhecido permanece
+null. O capturador soma quatorze famílias, sem novo endpoint ou produtor habilitado.
+Ver [ADR 0286](decisions/0286-editorial-generation-capture.md).
+
+## Captura histórica dos ciclos de revisão
+
+bookEditorialReviewCapture projeta review-job/unit/analysis como checkpoints,
+solicitação própria e cobertura técnica. inspectLiteraryReviewSource é read-only;
+o fluxo interativo preserva suas transições nativas de stale. Análises referenciam
+o relatório único de Prose, autorizado independentemente do agregado. Novos
+registros guardam captureBinding privado com nascimentos de pais/pedido; o DTO
+público antigo é preservado. Ausência legada não recebe backfill pela cabeça atual.
+A conferência do nascimento precede a leitura do cabeçalho de prosa. chapter-scenes
+e analyses são metadata histórica, sem execução ou grant. São dezessete famílias
+internas, bundles de revisão até três artefatos/1 MiB, partes de 64 KiB, sem
+produtor/restauração v2 habilitados. Ver [ADR 0287](decisions/0287-editorial-review-capture.md).
+
+## Captura histórica da integração literária
+
+bookEditorialIntegrationCapture projeta integration-job/request pelo gate read-only
+inspectLiteraryIntegrationSource e pela autorização nativa de cada pedido. O fluxo
+interativo mantém suas transições stale; captura não escreve nem abre resultados
+após revogação/deriva. Novos headers guardam captureBinding privado com nascimentos
+do job e pedidos fornecidos à síntese, sem alterar DTO público ou fazer backfill
+legado. reportSources por achado/observação conserva a procedência de síntese como
+referências a reports, com alvo semântico e remapeamento próprios; evidenceIds
+continua reservado às citações. Contexto canonical-json não equivale a prosa
+observada. Bundles até 242 artefatos/2 MiB e partes 64 KiB, dezenove famílias internas,
+produtor/restauração v2 ainda fechados. Ver [ADR 0288](decisions/0288-editorial-integration-capture.md).
+
+## Captura histórica de guias e manifestos
+
+bookEditorialPublicationCapture segue o gate de origem da edição/livro antes de
+abrir o corpo do guia, preservando história autoral sem chamar current mutável.
+Captura publication-job/chapter/removal e reader-guide-current/version (24 famílias).
+Document.readerGuide mantém revelações, fatos, relações, aparições e IDs de evidência;
+editionKey agrupa história de guia e manifesto, sem grant. Tombstones e aliases são
+conferidos. Citações sem posição registrada continuam not-recorded/unclassified.
+Identidade de capítulo é reautorizada separada de seu texto atual. Remap mantém
+chaves e vínculos privados. O núcleo semântico exige evidence e impede colisão de
+chaves entre linhagens/edições; alvo ausente gera aviso. Bundles até57/1MiB, partes
+64KiB, sem produtor/restauração v2 habilitados. Ver [ADR 0289](decisions/0289-editorial-publication-capture.md).
+
+## Checkpoints históricos de redação e preservação
+
+bookEditorialCheckpointCapture projeta draft-job/unit e milestone-job/unit por
+metadata, com instrução/configuração histórica e execução desabilitada. Novos
+escritores registram captureBinding privado de capítulo, pai/cena, proposta e versão
+nas transações nativas; DTO público e débitos são preservados. Proposta exige
+revisão/cobertura/geração conferidas na passagem ao aceite, nascimento original antes
+do cabeçalho e gate Prose na captura. Histórico exige nascimento/recurso/hash por
+metadata, sem corpos. Legado/recriações ficam indisponíveis sem backfill. DTO adiciona
+preservation, verifiedUnits e adoptedUnits. 28 famílias internas, bundles até2/1MiB,
+partes64KiB; sem produtor/restauração v2 habilitados. Ver
+[ADR 0290](decisions/0290-editorial-draft-preservation-checkpoints.md).
+
+## Checkpoints históricos de workflows e sequências
+
+bookEditorialOrchestrationCapture projeta workflow-job/sequence-job (30 famílias).
+Gate seleciona identidade/ator/livro antes de instrução/limites, inclusive nos vínculos.
+Não chama controlador/driver nem copia títulos em cache ou corpos derivados.
+Configuração pública, limites/fases e contagens ficam históricos/desabilitados.
+Bindings congelados conservam associação recíproca de workflows concluídos;
+recriações e ponteiros sem nascimento ficam unavailable, sem backfill. Bundles
+até2/1MiB e partes64KiB; produtor/restauração v2 permanecem fechados. Ver
+[ADR 0291](decisions/0291-editorial-orchestration-capture.md).
+
+## Captura histórica da topologia de impacto
+
+bookEditorialImpactCapture projeta control/graph/node/link/visit/witness/check
+(37 famílias). inspectLiteraryImpactCurrent compartilha o gate nativo sem escrita.
+UID/book/controlbirth precedem intent/census; registro/escopo/grafo originais
+precedem payload derivado. Não usa motor mutável, labels ou corpos. IDs por
+encarnação conectam topologia e propagação com destinos metadata conferidos;
+ausências ficam unavailable. Fatos técnicos geram relatório, sem evidência de prosa
+ou grant; decisões próprias permanecem separadas. Até2artefatos/1MiB, partes64KiB,
+sem produtor/restauração v2 habilitados. Ver
+[ADR 0292](decisions/0292-editorial-impact-capture.md).
+
+## Produtor editorial e confirmação de arquivo
+
+O catálogo puro `bookEditorialCaptureCatalog` define 37 famílias. O setor existente
+bookPortabilityApi expõe fonte/catálogo/lista/partes/inspeção/verificações, enquanto
+bookEditorialBackupRecords desmembra bundles, pula aliases e compõe vínculos pelo
+extrator público puro, com censo completo e reconferência metadata por digests.
+A cobertura declarada do fence v3 exige writers coordenados e drenagem prévia;
+não é prova de rollout ou concessão de acesso.
+
+`streamBookBackup` aceita editorial somente por port optativo congelado antes de
+await. `saveBookBackup` espelha v2 em bookBackupStage, OPFS próprio com partes
+AES-GCM de 64 KiB, AAD por operação/posição/comprimento e chave somente em RAM.
+Após o selo, reutiliza inspectBookBackupContent e o índice temporário cifrado;
+compara selo/tamanho/origem, limpa o estágio e só então confirma o destino.
+Falhas abortam o arquivo provisório, preservando outras operações. O formato
+padrão permanece v1 e a restauração v2 segue fechada. Ver
+[ADR 0293](decisions/0293-editorial-backup-producer-and-staging.md).
+
+## Inventário e projeção da restauração editorial
+
+bookRestoreEditorialInventory fecha os endereços v15 de literaryArchive,
+literaryArchiveBodies, literaryArchiveParts e preparedEditorial. A migração exige
+base v14/schema13 auditada e ausência dos novos namespaces/journals. O escritor
+genérico recusa bytes editoriais após cancelamento. bookRestoreEditorialCleanup
+é composto após revogar personas e instalar a barreira da capa: partes primeiro,
+conferência de ausência física, headers e certificação vazia em unidade própria.
+Contadores e recibos usam o protocolo existente; o cleaner genérico não pode
+remover esses recursos fora dessa ordem.
+
+bookRestoreRemap compõe o remapeador editorial puro com hash de domínio ligado ao
+job e com as mesmas identidades nativas do manuscrito/narrativa/histórico. O token
+não entra no DTO. readMappedItem conserva verify(tx) e política histórica privada,
+sem promover referência indisponível a grant. Admissão pública v2 permanece
+fechada. A ativação v15 passa a ter composição interna por opção desligada,
+conforme ADR 0299; consumidores e reexportação aguardam integração.
+Ver [ADR 0294](decisions/0294-editorial-restore-inventory-and-projection.md).
+
+## Materialização editorial privada
+
+bookRestoreEditorial copia o JSON original por partes lógicas de64KiB do leitor
+nativo; descritores recebem IDs projetados sem expandir o corpo histórico. Hash
+semântico vem do índice certificado, SHA físico dos bytes originais. Reserva,
+parte, confirmação do último nascimento e registro usam unidades separadas com
+verify(tx) antes dos writes e journals/recibos/ledger atômicos. Controle e SHA
+parcial ficam privados; materialized não é certificado de ativação.
+
+A opção interna editorialPreparation é false por padrão e não vem do input.
+Reservas já existentes retomam sem admitir novas. Métodos internos não entram no
+registro público. readMappedDraft desconta a cauda v2 certificada antes de preparar
+personas. V15 cancela personas, fecha a capa, limpa editorial e segue para filhos.
+Estados editáveis, revisão/ativação, leitores, recaptura e exclusão seguem pendentes.
+Ver [ADR 0295](decisions/0295-editorial-restore-materialization.md).
+
+## Cópias editoriais para edição
+
+bookRestoreEditorialHeads prepara correntes explícitos de contrato/plano da fonte
+nativa v2 após a materialização histórica. Corrente, revisão1 e pendência privada
+são transacionais, com verify(tx), ledger e recibo; o próximo passo confirma seus
+nascimentos. bookRestoreEditorialRead é a leitura autenticada comum dos controles.
+
+V15 inclui endereços fechados de literaryProduction/literaryContractVersions,
+literaryPlans/literaryPlanVersions e literaryRestoreReviews, além do arquivo.
+O cleanup inclui esses tipos após fechar personas/capa e retirar partes. Fontes
+portáteis ficam pendentes sem tokens; planos começam como propostas e política
+explícita do contrato fica em orientação. IDs locais de decisões e ausência de
+política são preservados para respeitar os limites nativos sem truncamento.
+
+O controle opcional heads entra no ledger; prepared não autoriza ativação. A raiz
+continua ausente, métodos internos fora do registro público e nenhuma execução
+antiga é instalada. Censo, revisão, ativação, clocks, leitores, recaptura e exclusão
+precisam ser integrados antes da liberação. Ver
+[ADR0296](decisions/0296-editorial-restore-editable-heads.md).
+
+## Censo integral do preparo editorial
+
+editorialAddedArtifacts é criado pelos escritores v15 na transação dos artefatos;
+o verificador conserva a igualdade exata da auditoria da base e o controle confere
+a contribuição contra baseArtifacts. O recibo da base é imutável, coincide com o
+job antes da primeira reserva e antecede o nascimento do controle depois dela.
+
+bookRestoreEditorialAudit pagina journals e coleções em até8metadata/unidade,
+usando o layout original v14 e extensão v15. Coleções operacionais do catálogo que
+não foram restauradas e literaryPlanLinks devem estar vazias. Controle mutável é
+contado sem virar âncora congelada e acompanha o commit do job. A prova terminal
+fixa fonte, contadores, layout, contexto, âncora e recibos. O port interno verifica
+essa prova na transação consumidora e falha após cancelamento ou mudança de job.
+
+Censo não ativa raiz nem expõe ação pública. Revisão, ativação/clocks, leitura,
+recaptura e exclusão precisam ser integradas antes da liberação. Ver
+[ADR0297](decisions/0297-editorial-restore-final-census.md).
+
+## Exclusão do arquivo editorial
+
+bookEditorialStorage centraliza os endereços usados por preparo e exclusão.
+bookEditorialArchiveDeletion lê somente metadata, exige raiz própria deleting e
+publicação revogada e prepara até50remoções, com partes antes de corpos/registros/
+revisões. sceneJobs confirma o plano com contador/checkpoint/recibo na transação.
+A fase editorial-archive precede as coleções planas; finish reconfere seu vazio e
+redireciona retomadas antigas ou recursos tardios antes da raiz. Contrato/planos/
+versões seguem a limpeza literária existente. Outros livros, biblioteca e jobs
+externos não fazem parte desse inventário. Cancelamento do restore conserva seu
+protocolo nativo próprio. Ver
+[ADR0298](decisions/0298-book-editorial-archive-deletion.md).
+
+
+## Ativação editorial interna
+
+bookRestoreEditorialActivation compõe censo nativo, metadados da revisão e estado
+inicial da raiz em bookRestoreActivationReview/Effects. A opção de host
+editorialActivation é false por padrão e não pertence aos DTOs. O recibo v15
+fixa contexto, token do controle e token do selo; v14 mantém o shape anterior.
+A confirmação histórica conserva a prova de nascimento e não concede acesso ao
+livro atual. Root, contagens, universo/personas/capa e recibo usam o commit final
+existente. Clocks literários representam a nova adoção, sem copiar revisões antigas.
+
+Retirada v15 substitui somente o selo do censo editorial, por atualização nativa
+do controle/journal/job/recibo. Ela preserva o selo base e o ledger; permanece
+possível com novas ativações desligadas e invalida revisões anteriores. O loader
+aceita o certificado no estado ativado, sem relaxar o inventário/fonte exigidos.
+Não há novos métodos públicos ou mudança de Rules. Ver
+[ADR 0299](decisions/0299-editorial-restore-activation.md). Testes preparados sem
+execução; leitor, pendências, recaptura e interface continuam pendentes.
+
+
+## Leitor do arquivo editorial depois da limpeza da origem
+
+bookEditorialHistoryOrigin separa a prova histórica de ativação da autorização
+atual da raiz. O testemunho preparedEditorial/current e o selo ficam vinculados
+ao recibo nativo e sobrevivem ao cleanup dos journals/chunks/índices. Unidades
+archive v15 reconferem esse testemunho; v14 mantém o layout existente. Não há
+prosa ou chave no testemunho e ele não confere acesso ao livro atual.
+
+bookEditorialHistory lista metadata paginada e lê partes até64KiB. Header e corpo
+exigem identidade remapeada do job, nascimento do corpo e commit do selo do item;
+header/partes são imutáveis e anteriores ao corte nativo. Cada parte confere SHA.
+O port de consumo reautoriza a raiz e confere tokens no tx do caller sem reler
+payloads; o consumidor ainda confere SHA/cadeia integrais antes do aceite.
+
+Pendências usam revisão original, versão1 nativa e corrente atual para retornar
+unchanged/changed/missing e base de comparação. Edição/recriação invalida a base
+original. O aceite persistido/CAS, a interface e a recaptura não são implementados
+pela leitura. Métodos continuam internos. Ver
+[ADR 0300](decisions/0300-editorial-history-reader-after-source-cleanup.md).
+Testes preparados sem execução; nenhuma abertura de produção.
+
+
+## Aceite das pendências editoriais restauradas
+
+bookEditorialRestoreReviewRead compartilha a base transacional com o leitor de
+histórico. O token de revisão inclui literaryRevision protegido, além de origem,
+corrente/versão nativas e resolução existente. bookEditorialRestoreReview grava
+escolha explícita, resolução e recibo metadata com clocks no mesmo commit.
+Manter corrente não recria recursos; reconciliar muda somente referências.
+
+literaryPlanWrite extrai o preparo do saveLiteraryPlan existente, preservando
+CAS/autorização/no-op/versões/índice. O escritor normal e a reconciliação compõem
+seus efeitos sem transações aninhadas. Referências portáteis não são grants;
+fontes são reautorizadas na transação, e mudanças manuais dos demais campos são
+preservadas. O arquivo original não é alterado.
+
+bookEditorialRestoreReviewStore exige resolução/operação imutáveis do mesmo
+nascimento, vinculadas à raiz e à revisão original. Recibos confirmam somente
+histórico; leitura atual continua autorizada separadamente. Ausência de um par
+recusa recuperação e o clock impede replay antigo após perda de ambos. Novos
+namespaces são privados nas Rules, entram na exclusão de livro e devem estar
+vazios antes da raiz restaurada. Layout de censo v15 permanece inalterado.
+Ver [ADR 0301](decisions/0301-restored-editorial-review-cas.md). Métodos internos,
+testes preparados sem execução; interface/recaptura e integração ainda pendentes.

@@ -1,5 +1,8 @@
 import { randomBytes as secureRandomBytes } from 'node:crypto';
 import { readWorkMetadata } from './workProgressContracts.mjs';
+import { prepareLiteraryChatContextIndex } from './literaryChatContextIndex.mjs';
+import { literaryWritingScope, captureLiteraryWritingSnapshot } from './literaryWritingContext.mjs';
+import { normalizeEditorChatClosure } from './editorChatContracts.mjs';
 import {
   editorChatFail,
   editorChatSourceId,
@@ -154,8 +157,8 @@ export async function readEditorChatContext(tx, db, uid, id, token, scope) {
     );
   }
 }
-async function coverage(tx, db, source) {
-  const environment = await readEditorChatEnvironment(tx, db, source),
+async function coverage(tx, db, source, literaryPlanIds) {
+  const environment = await readEditorChatEnvironment(tx, db, source, { literaryPlanIds }),
     persona = await readEditorChatPersona(tx, db, source);
   return {
     environment,
@@ -239,7 +242,12 @@ export async function readEditorChatReadyContext(
   }
   let proof = null;
   try {
-    proof = await coverage(tx, db, authorized.source);
+    proof = await coverage(
+      tx,
+      db,
+      authorized.source,
+      context.record.proofCoverage.environment.literarySelection,
+    );
   } catch (error) {
     if (error.details?.reason !== 'provenance-revoked') throw error;
   }
@@ -380,7 +388,7 @@ export function createEditorChatContextService({
           editorChatFail('operation-conflict');
         const source = await readEditorChatSource(tx, db, uid, r, { withContent: true });
         if (!baseMatches(source.source, r.base)) editorChatFail('context-stale');
-        const proof = await coverage(tx, db, source),
+        const proof = await coverage(tx, db, source, r.literaryPlanIds),
           at = time(now);
         const contextToken = await editorChatControlToken('context', {
           ownerId: uid,
@@ -529,7 +537,12 @@ export function createEditorChatContextService({
       let source, proof, coherent;
       try {
         source = await readEditorChatSource(tx, db, uid, r);
-        proof = await coverage(tx, db, source);
+        proof = await coverage(
+          tx,
+          db,
+          source,
+          context.record.proofCoverage.environment.literarySelection,
+        );
         coherent = same(proof.proof, context.record.proofCoverage);
       } catch (error) {
         if (error.details?.reason === 'inconsistent') throw error;
@@ -576,6 +589,7 @@ export function createEditorChatContextService({
         manifest = null,
         closureHash = null,
         cursor = page.cursor;
+      let dependencyIndex = null;
       if (
         page.complete &&
         context.summary.phase === 'local' &&
@@ -602,10 +616,29 @@ export function createEditorChatContextService({
         }
         const persona = await readEditorChatPersona(tx, db, source, { full: true });
         if (!same(persona.proof, proof.persona.proof)) editorChatFail('context-stale');
-        const closure = await editorChatDirectClosure(source, persona, lore);
+        let closure = await editorChatDirectClosure(source, persona, lore);
+        let literary = null;
+        if (source.target.kind === 'book') {
+          literary = await captureLiteraryWritingSnapshot(
+            tx,
+            literaryWritingScope(db, uid, source.target),
+            source.scope.resource,
+            {
+              planIds: context.record.proofCoverage.environment.literarySelection,
+            },
+          );
+          if ((literary?.stateToken ?? undefined) !== proof.environment.literaryToken)
+            editorChatFail('context-stale');
+          if (literary)
+            closure = await normalizeEditorChatClosure([
+              ...closure.leaves,
+              { kind: 'literary', ownerId: uid, manifest: literary.manifest },
+            ]);
+        }
         const snapshot = {
           schemaVersion: 1,
           matcherVersion: 1,
+          ...(literary ? { literary } : {}),
           capturedAt: at,
           source: context.record.source,
           capture: body.capture,
@@ -618,6 +651,14 @@ export function createEditorChatContextService({
         const frozen = await verifyEditorChatSnapshot({
           ...snapshot,
           contextHash: await editorChatHash(snapshot),
+        });
+        dependencyIndex = await prepareLiteraryChatContextIndex(tx, db, uid, {
+          contextId: r.contextId,
+          contextToken: r.contextToken,
+          source,
+          closure,
+          persona,
+          lore,
         });
         nextBody = {
           schemaVersion: 1,
@@ -644,6 +685,7 @@ export function createEditorChatContextService({
         closureHash,
       };
       assertEditorChatEnvelope(record);
+      dependencyIndex?.commit();
       tx.set(context.ref, record);
       tx.set(bodyRef(db, uid, r.contextId), nextBody);
       return {

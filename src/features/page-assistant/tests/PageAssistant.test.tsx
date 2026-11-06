@@ -171,3 +171,56 @@ it('keeps a question draft while navigating and labels its original context', as
   );
   expect(mocks.ask).not.toHaveBeenCalled();
 });
+it('shows the exact editorial source and replaces it when the context changes', async () => {
+  mocks.load.mockResolvedValue(null);
+  mocks.ask
+    .mockResolvedValueOnce({
+      reply: 'Primeira resposta',
+      action: null,
+      contextProof: 'guide-one',
+      editorialContext: {
+        bookId: 'project-id',
+        revision: 1,
+        scope: 'editorial-contract-only',
+        wholeBook: false,
+        instruction: 'Primeira pessoa limitada',
+      },
+    })
+    .mockResolvedValueOnce({
+      reply: 'Nova resposta',
+      action: null,
+      contextProof: 'guide-two',
+      editorialContext: {
+        bookId: 'project-id',
+        revision: 2,
+        scope: 'editorial-contract-only',
+        wholeBook: false,
+        instruction: 'Terceira pessoa limitada',
+      },
+    });
+  render(tree());
+  await userEvent.type(screen.getByLabelText('Pedido ao assistente da página'), 'Confira o POV');
+  await userEvent.click(screen.getByRole('button', { name: 'Enviar pedido' }));
+  await screen.findByText('Primeira resposta');
+  await userEvent.click(screen.getByText('Guia editorial utilizado · revisão 1'));
+  expect(screen.getByLabelText('Guia editorial enviado nesta resposta')).toHaveValue(
+    'Primeira pessoa limitada',
+  );
+  expect(screen.getByLabelText('Guia editorial enviado nesta resposta')).toHaveAttribute(
+    'readonly',
+  );
+  expect(screen.getByText(/não inclui leitura integral/)).toBeVisible();
+  await userEvent.type(
+    screen.getByLabelText('Pedido ao assistente da página'),
+    'Confira novamente',
+  );
+  await userEvent.click(screen.getByRole('button', { name: 'Enviar pedido' }));
+  await screen.findByText('Nova resposta');
+  expect(screen.queryByText('Primeira resposta')).not.toBeInTheDocument();
+  expect(screen.queryByText('Guia editorial utilizado · revisão 1')).not.toBeInTheDocument();
+  await userEvent.click(screen.getByText('Guia editorial utilizado · revisão 2'));
+  expect(screen.getByLabelText('Guia editorial enviado nesta resposta')).toHaveValue(
+    'Terceira pessoa limitada',
+  );
+  expect(screen.getByText('Confira o POV')).toBeVisible();
+});

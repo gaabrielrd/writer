@@ -55,12 +55,23 @@ import {
   readChatApplyRecovery,
   writeChatApplyRecovery,
   clearChatApplyRecovery,
+  AUTOCOMPLETE_APPLY_EVENT,
+  readPendingAutocompleteApplies,
+  beginAutocompleteApply,
+  finishAutocompleteApply,
+  applyLiteraryAutocomplete,
+  getLiteraryAutocompleteApplication,
+  abandonLiteraryAutocompleteApplication,
+  type AtomicAutocompleteApply,
+  type PendingAutocompleteApply,
+  type AutocompleteApplication,
   type AIActionType,
   type ChatEditorBridge,
   type ChatContext,
   type ChatApplyInput,
 } from '@/features/ai-assistant';
-import { clearLocalDraft, readLocalDraft } from '../services/localDraftStorage';
+import { WritingSourcePicker } from '@/features/literary-production';
+import { clearLocalDraft, readLocalDraft, writeLocalDraft } from '../services/localDraftStorage';
 import { runChapterOperation } from '../services/chapterContentStorage';
 import { useAutoSave } from '../hooks/useAutoSave';
 import { useEditorFullscreen } from '../hooks/useEditorFullscreen';
@@ -94,6 +105,7 @@ function EditorSession() {
   const [chapter, setChapter] = useState<Chapter | null>(null);
   const [personaDialog, setPersonaDialog] = useState(false);
   const personaButton = useRef<HTMLButtonElement | null>(null);
+  const [editorialContextVersion, setEditorialContextVersion] = useState('');
   const [bindingError, setBindingError] = useState<string | null>(null);
   const [bindingAttempt, setBindingAttempt] = useState(0);
   const hasPersona = Boolean(book?.personaId || chapter?.personaComplement);
@@ -128,6 +140,7 @@ function EditorSession() {
   const [loading, setLoading] = useState<boolean>(() => Boolean(bookId && chapterId));
   const [error, setError] = useState<string | null>(null);
 
+  const [autocompletePlanIds, setAutocompletePlanIds] = useState<string[] | undefined>(undefined);
   const [activePanel, setActivePanel] = useState<'lore' | 'chat' | null>(null);
   const isSidebarOpen = activePanel === 'lore';
   const setIsSidebarOpen = (open: boolean) => setActivePanel(open ? 'lore' : null);
@@ -142,6 +155,59 @@ function EditorSession() {
     user?.uid && bookId && chapterId ? readChatApplyRecovery(user.uid, bookId, chapterId) : null,
   );
   const [chatRecoveryError, setChatRecoveryError] = useState<string | null>(null);
+  const [autocompleteJournal, setAutocompleteJournal] = useState<{
+    pending: PendingAutocompleteApply[];
+    error: string | null;
+  }>(() => {
+    try {
+      return {
+        pending:
+          user?.uid && bookId && chapterId
+            ? readPendingAutocompleteApplies(user.uid, { bookId, chapterId })
+            : [],
+        error: null,
+      };
+    } catch (cause) {
+      return {
+        pending: [],
+        error: cause instanceof Error ? cause.message : 'Controle de aceite indisponível.',
+      };
+    }
+  });
+  const autocompleteJournalRef = useRef(autocompleteJournal);
+  const autocompleteLock = useRef(false);
+  const [autocompleteBusy, setAutocompleteBusy] = useState(false);
+  const [autocompleteError, setAutocompleteError] = useState<string | null>(null);
+  const autocompletePending = Boolean(
+    autocompleteJournal.pending.length || autocompleteJournal.error,
+  );
+  const refreshAutocompleteJournal = useCallback(() => {
+    let next: typeof autocompleteJournal;
+    try {
+      next = {
+        pending:
+          user?.uid && bookId && chapterId
+            ? readPendingAutocompleteApplies(user.uid, { bookId, chapterId })
+            : [],
+        error: null,
+      };
+    } catch (cause) {
+      next = {
+        pending: [],
+        error: cause instanceof Error ? cause.message : 'Controle de aceite indisponível.',
+      };
+    }
+    autocompleteJournalRef.current = next;
+    setAutocompleteJournal(next);
+  }, [user, bookId, chapterId]);
+  useEffect(() => {
+    window.addEventListener('storage', refreshAutocompleteJournal);
+    window.addEventListener(AUTOCOMPLETE_APPLY_EVENT, refreshAutocompleteJournal);
+    return () => {
+      window.removeEventListener('storage', refreshAutocompleteJournal);
+      window.removeEventListener(AUTOCOMPLETE_APPLY_EVENT, refreshAutocompleteJournal);
+    };
+  }, [refreshAutocompleteJournal]);
   const chatSequence = useRef(0);
   const chatOpening = useRef(false);
   const [isAcceptingAI, setIsAcceptingAI] = useState(false);
@@ -168,7 +234,8 @@ function EditorSession() {
     ),
   );
   const historyPendingRef = useRef(historyPending);
-  const operationBusy = isAcceptingAI || historyBusy || historyPending;
+  const operationBusy =
+    isAcceptingAI || historyBusy || historyPending || autocompleteBusy || autocompletePending;
   useLayoutEffect(() => {
     historyActive.current = true;
     return () => {
@@ -190,7 +257,15 @@ function EditorSession() {
     (busy: boolean) => {
       aiBusyRef.current = busy;
       setIsAcceptingAI(busy);
-      setPendingEditorOperation(busy || historyLock.current || historyPendingRef.current);
+      setPendingEditorOperation(
+        busy ||
+          historyLock.current ||
+          historyPendingRef.current ||
+          autocompleteLock.current ||
+          Boolean(
+            autocompleteJournalRef.current.pending.length || autocompleteJournalRef.current.error,
+          ),
+      );
     },
     [setPendingEditorOperation],
   );
@@ -200,6 +275,9 @@ function EditorSession() {
     },
     [setPendingEditorOperation],
   );
+  useEffect(() => {
+    setPendingEditorOperation(operationBusy);
+  }, [operationBusy, setPendingEditorOperation]);
   const [createEntityName, setCreateEntityName] = useState<string | null>(null);
   const [selectedEntityId, setSelectedEntityId] = useState<string | null>(null);
 
@@ -222,6 +300,7 @@ function EditorSession() {
     debounceMs: 1000,
     ownerId: user?.uid,
     enabled: chapter !== null && chapter.contentMode !== 'scenes',
+    paused: autocompletePending,
     onSaved: handleSaved,
   });
   useEffect(() => {
@@ -250,6 +329,9 @@ function EditorSession() {
       },
       (cause) => {
         if (active) setBindingError(cause.message);
+      },
+      (version) => {
+        if (active) setEditorialContextVersion(version);
       },
     );
     return () => {
@@ -408,7 +490,175 @@ function EditorSession() {
       chatOpening.current = false;
     }
   };
+  const verifyAutocompleteReceipt = (
+    pending: PendingAutocompleteApply,
+    receipt: AutocompleteApplication,
+  ) => {
+    if (
+      receipt.state !== 'confirmed' ||
+      receipt.requestId !== pending.requestId ||
+      receipt.operationId !== pending.operationId ||
+      receipt.chapterId !== pending.chapterId ||
+      receipt.beforeHash !== pending.beforeHash ||
+      receipt.afterHash !== pending.afterHash
+    )
+      throw new Error('O recibo não corresponde a este aceite. Preserve a pendência.');
+  };
+  const applyAutocomplete = async (input: AtomicAutocompleteApply) => {
+    if (
+      !user?.uid ||
+      !bookId ||
+      !chapterId ||
+      !historyActive.current ||
+      historyLock.current ||
+      historyPendingRef.current ||
+      autocompleteLock.current ||
+      chatApplyRecovery ||
+      autocompleteJournalRef.current.error ||
+      autocompleteJournalRef.current.pending.length ||
+      recoveryDraft !== null
+    )
+      throw new Error('Resolva as operações e recuperações pendentes antes de aplicar.');
+    if (
+      input.offer.bookId !== bookId ||
+      input.offer.chapterId !== chapterId ||
+      liveContent.current !== input.before
+    )
+      throw new Error('O contexto do aceite mudou.');
+    // Acquire before the first save/RPC. The ghost owns its own AI busy flag.
+    if (autocompleteLock.current) throw new Error('Há um aceite em andamento.');
+    autocompleteLock.current = true;
+    setAutocompleteBusy(true);
+    setPendingEditorOperation(true);
+    setAutocompleteError(null);
+    try {
+      if ((await chatDocumentHash(input.before)) !== input.offer.beforeHash)
+        throw new Error('O texto não corresponde à sugestão.');
+      await saveNow();
+      await runChapterOperation(bookId, chapterId, async () => {
+        if (
+          !historyActive.current ||
+          liveContent.current !== input.before ||
+          autocompleteJournalRef.current.pending.length ||
+          autocompleteJournalRef.current.error ||
+          getSavedContent() !== input.before
+        )
+          throw new Error('Confirme o salvamento do texto original antes do aceite.');
+        const persisted = await getChapter(bookId, chapterId);
+        if (!persisted || persisted.content !== input.before)
+          throw new Error('O capítulo mudou em outra sessão. Recarregue as fontes.');
+        const pending: PendingAutocompleteApply = {
+          version: 1,
+          actorId: user.uid,
+          bookId,
+          chapterId,
+          requestId: input.offer.requestId,
+          operationId: crypto.randomUUID(),
+          beforeHash: input.offer.beforeHash,
+          afterHash: await chatDocumentHash(input.after),
+        };
+        await beginAutocompleteApply(pending);
+        refreshAutocompleteJournal();
+        // Once dispatched, retain the fence on every failure, including lost replies.
+        const receipt = await applyLiteraryAutocomplete(
+          pending,
+          pending.requestId,
+          pending.operationId,
+          input.after,
+        );
+        verifyAutocompleteReceipt(pending, receipt);
+        if (!historyActive.current || liveContent.current !== input.before)
+          throw new Error('O texto foi confirmado no servidor. Consulte o aceite para recuperar.');
+        input.commit();
+        acceptConfirmedContent(input.after);
+        liveContent.current = input.after;
+        setContent(input.after);
+        setWordCount(receipt.wordCount);
+        updateUserCreditsState(receipt.credits);
+        clearLocalDraft(user.uid, bookId, chapterId, input.before);
+        await finishAutocompleteApply(pending);
+        refreshAutocompleteJournal();
+      });
+    } catch (cause) {
+      const message =
+        cause instanceof Error ? cause.message : 'Não foi possível confirmar o aceite.';
+      setAutocompleteError(message);
+      throw cause;
+    } finally {
+      autocompleteLock.current = false;
+      if (historyActive.current) setAutocompleteBusy(false);
+    }
+  };
+  const resolveAutocomplete = async (pending: PendingAutocompleteApply, abandon = false) => {
+    if (
+      !user?.uid ||
+      user.uid !== pending.actorId ||
+      pending.bookId !== bookId ||
+      pending.chapterId !== chapterId ||
+      autocompleteLock.current ||
+      historyLock.current ||
+      aiBusyRef.current
+    )
+      return;
+    autocompleteLock.current = true;
+    setAutocompleteBusy(true);
+    setPendingEditorOperation(true);
+    setAutocompleteError(null);
+    try {
+      await runChapterOperation(pending.bookId, pending.chapterId, async () => {
+        const outcome = abandon
+          ? await abandonLiteraryAutocompleteApplication(
+              pending,
+              pending.requestId,
+              pending.operationId,
+            )
+          : await getLiteraryAutocompleteApplication(pending, pending.operationId);
+        if (!historyActive.current) return;
+        if (outcome.state === 'unconfirmed') {
+          setAutocompleteError(
+            'O servidor ainda não confirmou este aceite. Consulte novamente ou cancele o aceite pendente.',
+          );
+          return;
+        }
+        if (outcome.state === 'confirmed') {
+          verifyAutocompleteReceipt(pending, outcome.receipt);
+          const latest = await getChapter(pending.bookId, pending.chapterId);
+          if (!latest || !historyActive.current)
+            throw new Error('Não foi possível recuperar o capítulo atual.');
+          const local = liveContent.current;
+          // Ask the existing draft recovery dialog to reconcile later local edits.
+          // Never replay the old proposal over the current server manuscript.
+          if (local !== getSavedContent() && local !== latest.content) {
+            writeLocalDraft(pending.actorId, pending.bookId, pending.chapterId, local);
+            setRecoveryDraft(local);
+          }
+          acceptConfirmedContent(latest.content);
+          liveContent.current = latest.content;
+          setContent(latest.content);
+          setWordCount(latest.wordCount);
+          setHistoryContentVersion((version) => version + 1);
+          updateUserCreditsState(outcome.receipt.credits);
+        }
+        await finishAutocompleteApply(pending);
+        refreshAutocompleteJournal();
+      });
+    } catch (cause) {
+      setAutocompleteError(
+        cause instanceof Error ? cause.message : 'Não foi possível consultar o aceite.',
+      );
+    } finally {
+      autocompleteLock.current = false;
+      if (historyActive.current) setAutocompleteBusy(false);
+    }
+  };
+
   const applyChat = async (input: ChatApplyInput) => {
+    if (
+      autocompleteLock.current ||
+      autocompleteJournalRef.current.error ||
+      autocompleteJournalRef.current.pending.length
+    )
+      throw new Error('Resolva o aceite de autocomplete antes de aplicar outra sugestão.');
     if (historyLock.current || historyPendingRef.current)
       throw new Error('Confirme a operação de histórico antes de aplicar sugestões.');
     if (!chatBridge || !bookId || !chapterId || personaError)
@@ -434,6 +684,12 @@ function EditorSession() {
       throw new Error('O lore utilizado mudou. Gere uma nova sugestão.');
     if (chatApplyRecovery)
       throw new Error('Recupere o aceite pendente antes de aplicar outra sugestão.');
+    if (
+      autocompleteLock.current ||
+      autocompleteJournalRef.current.pending.length ||
+      autocompleteJournalRef.current.error
+    )
+      throw new Error('Resolva o aceite de autocomplete antes de aplicar outra sugestão.');
     chatBridge.setBusy(true);
     try {
       const prepared = await chatBridge.prepare(
@@ -451,6 +707,13 @@ function EditorSession() {
         const recovery = {
           identity: input.identity,
           messageId: input.message.id,
+          ...(input.message.messageInstance === undefined
+            ? {}
+            : { messageInstance: input.message.messageInstance }),
+          ...(input.message.generationAttempt === undefined
+            ? {}
+            : { generationAttempt: input.message.generationAttempt }),
+          suggestionHash: await chatDocumentHash(input.message.suggestion!),
           requestId: input.requestId,
           expectedHash: await chatDocumentHash(persisted.content),
           sourceHash: input.target.hash,
@@ -492,7 +755,17 @@ function EditorSession() {
     }
   };
   const recoverChatApply = async () => {
-    if (!chatApplyRecovery || !user || !bookId || !chapterId || !chatBridge) return;
+    if (
+      !chatApplyRecovery ||
+      !user ||
+      !bookId ||
+      !chapterId ||
+      !chatBridge ||
+      autocompleteLock.current ||
+      autocompleteJournalRef.current.pending.length ||
+      autocompleteJournalRef.current.error
+    )
+      return;
     setChatRecoveryError(null);
     chatBridge.setBusy(true);
     try {
@@ -586,7 +859,15 @@ function EditorSession() {
       if (!historyActive.current) return;
       historyPendingRef.current = pending;
       setHistoryPending(pending);
-      setPendingEditorOperation(pending || historyLock.current || aiBusyRef.current);
+      setPendingEditorOperation(
+        pending ||
+          historyLock.current ||
+          aiBusyRef.current ||
+          autocompleteLock.current ||
+          Boolean(
+            autocompleteJournalRef.current.pending.length || autocompleteJournalRef.current.error,
+          ),
+      );
     },
     [setPendingEditorOperation],
   );
@@ -610,6 +891,9 @@ function EditorSession() {
           !bookId ||
           !chapterId ||
           aiBusyRef.current ||
+          autocompleteLock.current ||
+          autocompleteJournalRef.current.error ||
+          autocompleteJournalRef.current.pending.length ||
           historyState.current.saveStatus !== 'saved' ||
           historyState.current.recoveryDraft !== null ||
           historyState.current.chatApplyRecovery ||
@@ -634,7 +918,15 @@ function EditorSession() {
         historyLock.current = false;
         if (historyActive.current) {
           setHistoryBusy(false);
-          setPendingEditorOperation(historyPendingRef.current || aiBusyRef.current);
+          setPendingEditorOperation(
+            historyPendingRef.current ||
+              aiBusyRef.current ||
+              autocompleteLock.current ||
+              Boolean(
+                autocompleteJournalRef.current.pending.length ||
+                autocompleteJournalRef.current.error,
+              ),
+          );
         }
       }
     },
@@ -910,6 +1202,43 @@ function EditorSession() {
           </Button>
         </Alert>
       )}
+      {autocompleteJournal.error && (
+        <Alert variant="danger" title="Controle do autocomplete indisponível">
+          {autocompleteJournal.error}
+          <Button variant="secondary" onClick={refreshAutocompleteJournal}>
+            Consultar controle local
+          </Button>
+        </Alert>
+      )}
+      {autocompleteError && (
+        <Alert variant="warning" title="Confirmação do autocomplete">
+          {autocompleteError}
+        </Alert>
+      )}
+      {autocompleteJournal.pending.map((pending) => (
+        <Alert
+          key={pending.operationId}
+          variant="warning"
+          title="Autocomplete aguardando confirmação"
+        >
+          Consulte o resultado antes de continuar. Cancelar encerra o aceite pendente; se ele já foi
+          aplicado, o texto atual será recuperado pelo mesmo recibo.
+          <Button
+            variant="secondary"
+            disabled={autocompleteBusy}
+            onClick={() => void resolveAutocomplete(pending)}
+          >
+            Consultar aceite
+          </Button>
+          <Button
+            variant="secondary"
+            disabled={autocompleteBusy}
+            onClick={() => void resolveAutocomplete(pending, true)}
+          >
+            Cancelar aceite pendente
+          </Button>
+        </Alert>
+      ))}
       <ResizableEditorWorkspace
         uid={user?.uid ?? ''}
         panelOpen={activePanel !== null}
@@ -967,8 +1296,25 @@ function EditorSession() {
             </Button>
           </Alert>
         )}
+        <section aria-label="Fontes editoriais do autocomplete">
+          <WritingSourcePicker
+            bookId={book.id}
+            value={autocompletePlanIds}
+            onChange={setAutocompletePlanIds}
+            disabled={operationBusy}
+          />
+        </section>
         <RichEditor
           chapterLayout
+          autocompletePlanIds={autocompletePlanIds}
+          autocompleteContextVersion={JSON.stringify([
+            editorialContextVersion,
+            allLoreEntities.map((entity) => [
+              entity.id,
+              entity.universeId ?? null,
+              entity.updatedAt,
+            ]),
+          ])}
           workspaceExpanded={expanded}
           chatOpen={activePanel === 'chat'}
           onOpenChat={(action) => {
@@ -978,11 +1324,17 @@ function EditorSession() {
           chapterTitle={chapter.title}
           bookTitle={book.title}
           writingPersona={writingPersona}
-          aiUnavailableReason={personaError}
+          aiUnavailableReason={
+            personaError ||
+            globalLoreError ||
+            (autocompletePending ? 'Resolva o aceite pendente de autocomplete.' : null)
+          }
           onBusyChange={handleBusyChange}
+          bookId={book.id}
+          onAtomicAutocompleteApply={applyAutocomplete}
           documentId={chapter.id}
           content={content}
-          externalBusy={historyBusy || historyPending}
+          externalBusy={historyBusy || historyPending || autocompleteBusy || autocompletePending}
           externalContentVersion={historyContentVersion}
           onChange={handleContentChange}
           entities={allLoreEntities}

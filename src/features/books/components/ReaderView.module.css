@@ -258,3 +258,25 @@
   font-size: var(--text-sm);
   overflow-wrap: anywhere;
 }
+
+.guide {
+  margin-top: var(--space-6);
+  font-size: var(--text-sm);
+  overflow-wrap: anywhere;
+}
+.guideEntry {
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid hsl(var(--border));
+}
+.guideEntry summary {
+  cursor: pointer;
+  font-weight: 600;
+}
+.guideEntry p,
+.guideEntry ul {
+  margin-block: var(--space-2);
+}
+.guideEntry a {
+  color: hsl(var(--primary));
+  text-decoration: underline;
+}

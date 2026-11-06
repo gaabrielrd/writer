@@ -7,6 +7,7 @@ import type {
   LoreAnalysis,
   LoreChange,
   LoreAnalysisRequest,
+  LoreAnalysisEditorialContext,
 } from '../model/loreAnalysis';
 
 async function call<T>(name: string, data: unknown): Promise<T> {
@@ -25,6 +26,8 @@ async function call<T>(name: string, data: unknown): Promise<T> {
     );
   }
 }
+export const getLoreAnalysisEditorialContext = (bookId: string, chapterId: string) =>
+  call<LoreAnalysisEditorialContext>('getLoreAnalysisEditorialContext', { bookId, chapterId });
 export const analyzeChapterLore = (request: LoreAnalysisRequest) => {
   request.generation ??= capturePlatformTextGeneration();
   return call<LoreAnalysis>('analyzeChapterLore', request);

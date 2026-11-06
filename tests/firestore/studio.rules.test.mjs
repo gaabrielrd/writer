@@ -548,7 +548,7 @@ test('Admin AI acceptance rejects invalid monotonic dates before writes or credi
     await admin.doc('users/author').set({ credits: 5 });
     await chat.chapterChat('author', { ...identity, action: 'create' });
     const requestId = path === 'books/book' ? 'max-date' : 'infinite-date';
-    await chat.chapterChat('author', {
+    const message = await chat.chapterChat('author', {
       ...identity,
       action: 'send',
       requestId,
@@ -569,6 +569,9 @@ test('Admin AI acceptance rejects invalid monotonic dates before writes or credi
       action: 'apply',
       requestId,
       messageId: requestId,
+      messageInstance: message.messageInstance,
+      generationAttempt: message.generationAttempt,
+      suggestionHash: hash(message.suggestion ?? ''),
       expectedHash: hash('<p>Texto</p>'),
       sourceHash: context.target.hash,
       after: '<p>Novo texto</p>',

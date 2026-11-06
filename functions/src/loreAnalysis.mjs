@@ -9,6 +9,8 @@ import { prepareCampaignAuthorization } from './campaignAuthorization.mjs';
 import { readLoreAnalysisContext } from './loreAnalysisContext.mjs';
 import { text, aliases, patch, categories } from './loreAnalysisFields.mjs';
 import { createLoreAnalysisApplicationService } from './loreAnalysisApplication.mjs';
+import { readLoreAnalysisEditorialContext } from './loreAnalysisEditorialContext.mjs';
+import { resolveLoreEvidence, normalizeLoreClaims } from './loreClaimProtocol.mjs';
 
 const fail = (code, message) => {
   throw new GenerationError(code, message);
@@ -20,20 +22,29 @@ export function validateDetectedLore(items, source) {
   return items.map((item) => {
     if (!item || !categories.includes(item.category))
       fail('invalid-argument', 'Categoria inválida.');
-    const quote = text(item.evidence, 1000).trim();
-    const pattern = quote
-      .split(/\s+/u)
-      .map((word) => word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
-      .join('\\s+');
-    const evidence = source.includes(quote) ? quote : source.match(new RegExp(pattern, 'u'))?.[0];
-    if (!evidence || evidence.length > 1000)
+    let evidence;
+    try {
+      evidence = resolveLoreEvidence(source, text(item.evidence, 1000));
+    } catch {
       fail('invalid-argument', 'Evidência ausente no capítulo.');
+    }
     return {
       name: text(item.name, 200),
       category: item.category,
       summary: text(item.summary, 140),
       details: text(item.details, 8000, false),
       aliases: aliases(item.aliases),
+      ...(item.claims === undefined
+        ? {}
+        : {
+            claims: (() => {
+              try {
+                return normalizeLoreClaims(item.claims, item, source);
+              } catch (cause) {
+                fail('invalid-argument', cause.message);
+              }
+            })(),
+          }),
       evidence,
     };
   });
@@ -46,16 +57,25 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
     const current = await snapshot(tx, uid, record.bookId, record.chapterId);
     if (
       current.revision !== record.revision ||
+      (record.editorialContextToken !== undefined &&
+        current.editorialContext.contextToken !== record.editorialContextToken) ||
       (current.chapterHash !== record.chapterHash && current.chapterHash !== record.contentHash)
     )
       fail(
         'failed-precondition',
         'O contexto mudou. Analise novamente antes de reutilizar a resposta.',
       );
+    return current;
   }
   async function prepare(uid, data, provider) {
     if (!uid) fail('unauthenticated', 'Entre na sua conta.');
     if (!data) fail('invalid-argument', 'Solicitação inválida.');
+    if (
+      data.editorialContextToken !== undefined &&
+      (typeof data.editorialContextToken !== 'string' ||
+        !/^[a-f0-9]{64}$/.test(data.editorialContextToken))
+    )
+      fail('invalid-argument', 'Prova editorial inválida.');
     const generation =
       provider === 'platform' ? platformTextGeneration(data.generation, 12000) : null;
     const source = text(data.text, 120000);
@@ -70,6 +90,9 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       provider,
       provider === 'byok' ? data.entities : null,
       ...(data.generation !== undefined && provider === 'platform' ? [generation.requested] : []),
+      ...(data.editorialContextToken !== undefined
+        ? [{ editorialContextToken: data.editorialContextToken }]
+        : []),
     ]);
     const record = await db.runTransaction(async (tx) => {
       const previous = (await tx.get(ref)).data();
@@ -77,12 +100,26 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         if (previous.fingerprint !== fingerprint || previous.expiresAt <= now())
           fail('failed-precondition', 'Solicitação expirada ou reutilizada. Analise novamente.');
         if (previous.state === 'ready' || previous.state === 'applied') {
-          await verifyAnalysisContext(tx, uid, previous);
-          return previous;
+          const context = await verifyAnalysisContext(tx, uid, previous);
+          return {
+            ...previous,
+            ...(previous.editorialContextToken !== undefined
+              ? { editorialContext: context.editorialContext }
+              : {}),
+          };
         }
         fail('failed-precondition', 'Análise em andamento.');
       }
       const context = await snapshot(tx, uid, data.bookId, data.chapterId);
+      if (
+        (data.editorialContextToken !== undefined ||
+          (provider === 'byok' && context.editorialContext.present)) &&
+        data.editorialContextToken !== context.editorialContext.contextToken
+      )
+        fail(
+          'failed-precondition',
+          'O guia editorial mudou ou não foi conferido antes da análise. Consulte o contexto e analise novamente.',
+        );
       const versions = context.entities.map((entity) => [entity.id, entity.data.updatedAt ?? 0]);
       if (
         !Array.isArray(data.loreVersions) ||
@@ -105,6 +142,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         contentHash: hash(content),
         chapterHash: context.chapterHash,
         revision: context.revision,
+        ...(context.editorialContext.present ||
+        context.editorialProof.contextRevision > 0 ||
+        context.editorialProof.manuscriptBase ||
+        data.editorialContextToken !== undefined
+          ? {
+              editorialProof: context.editorialProof,
+              editorialContextToken: context.editorialContext.contextToken,
+            }
+          : {}),
         state: 'analyzing',
         expiresAt: now() + 3600000,
       };
@@ -112,6 +158,9 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       tx.create(ref, value);
       return {
         ...value,
+        ...(value.editorialContextToken !== undefined
+          ? { editorialContext: context.editorialContext }
+          : {}),
         context: context.entities.map(({ id, data: entity }) => ({
           id,
           name: entity.name,
@@ -123,7 +172,12 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
       };
     });
     if (record.state === 'ready' || record.state === 'applied')
-      return { id: data.requestId, provider, entities: record.entities };
+      return {
+        id: data.requestId,
+        provider,
+        entities: record.entities,
+        ...(record.editorialContext ? { editorialContext: record.editorialContext } : {}),
+      };
     try {
       let results = [];
       if (provider === 'byok') results = validateDetectedLore(data.entities, source);
@@ -136,6 +190,7 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
               generation: record.generation,
               text: part,
               lore: record.context,
+              ...(record.editorialContext ? { editorialContext: record.editorialContext } : {}),
               alreadyDetected: results,
               ...(attempt
                 ? {
@@ -185,7 +240,12 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         await verifyAnalysisContext(tx, uid, record);
         tx.update(ref, { state: 'ready', entities: results });
       });
-      return { id: data.requestId, provider, entities: results };
+      return {
+        id: data.requestId,
+        provider,
+        entities: results,
+        ...(record.editorialContext ? { editorialContext: record.editorialContext } : {}),
+      };
     } catch (cause) {
       await db.runTransaction(async (tx) => {
         const current = (await tx.get(ref)).data();
@@ -201,6 +261,15 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
   }
   return {
     ...createLoreAnalysisApplicationService({ db, now }),
+    async getLoreAnalysisEditorialContext(uid, data) {
+      if (!data || Object.keys(data).some((key) => !['bookId', 'chapterId'].includes(key)))
+        fail('invalid-argument', 'Origem de análise inválida.');
+      return db.runTransaction(
+        async (tx) =>
+          (await readLoreAnalysisEditorialContext(tx, db, uid, data.bookId, data.chapterId))
+            .snapshot,
+      );
+    },
     analyzeChapterLore: (uid, data) => prepare(uid, data, 'platform'),
     prepareBYOKLore: (uid, data) => prepare(uid, data, 'byok'),
     async applyLoreAnalysis(uid, data) {
@@ -233,7 +302,11 @@ export function createLoreAnalysisService({ db, generator, now = Date.now }) {
         )
           fail('failed-precondition', 'A análise expirou ou o texto mudou. Analise novamente.');
         const context = await snapshot(tx, uid, record.bookId, record.chapterId);
-        if (record.revision !== context.revision)
+        if (
+          record.revision !== context.revision ||
+          (record.editorialContextToken !== undefined &&
+            record.editorialContextToken !== context.editorialContext.contextToken)
+        )
           fail(
             'failed-precondition',
             'O lore ou universo mudou. Analise novamente antes de aplicar.',

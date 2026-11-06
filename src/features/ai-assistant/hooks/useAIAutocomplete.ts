@@ -2,14 +2,20 @@ import type { WritingPersonaContext } from '../model/persona';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { buildAutocompletePrompt, type LoreContextItem } from '../model/aiPrompt';
 import { type BYOKConfig, usesOwnKey } from '../model/byokConfig';
-import { getBYOKConfig } from '../services/byokStorage';
+import { getBYOKConfig, getBYOKRevision } from '../services/byokStorage';
 import { generateAIResponse } from '../services/aiClient';
 import { deductCredit } from '../services/creditsService';
 import { useAIConfig } from './useAIConfig';
+import { generateLiteraryAutocomplete } from '../services/literaryAutocompleteService';
+import type { AutocompleteOffer, AutocompleteScope } from '../model/atomicAutocomplete';
 
 export interface UseAIAutocompleteOptions {
   // null records canceled typing; a manual request remains available.
   typingRevision: number | null;
+  atomicScope?: AutocompleteScope;
+  planIds?: string[];
+  contextVersion?: string;
+  captureDocument?: () => string | null;
   writingPersona?: WritingPersonaContext;
   content: string;
   cursorPosition: number;
@@ -24,10 +30,14 @@ export interface UseAIAutocompleteOptions {
 
 export interface UseAIAutocompleteResult {
   suggestion: string | null;
+  editorial: AutocompleteOffer['editorial'];
   isLoading: boolean;
   isAccepting: boolean;
   error: string | null;
-  acceptSuggestion: (canApply?: () => boolean) => Promise<string | null>;
+  acceptSuggestion: (
+    canApply?: () => boolean,
+    applyAtomic?: (offer: AutocompleteOffer) => Promise<void>,
+  ) => Promise<string | null>;
   discardSuggestion: () => void;
   triggerManualAutocomplete: () => Promise<void>;
 }
@@ -36,12 +46,17 @@ interface Suggestion {
   text: string;
   config: BYOKConfig;
   context: string;
+  offer?: AutocompleteOffer;
 }
 
 const EMPTY_LORE: LoreContextItem[] = [];
 
 export function useAIAutocomplete({
   typingRevision,
+  atomicScope,
+  planIds,
+  contextVersion,
+  captureDocument,
   writingPersona,
   content,
   cursorPosition,
@@ -53,7 +68,14 @@ export function useAIAutocomplete({
   enabled = true,
   debounceMs = 600,
 }: UseAIAutocompleteOptions): UseAIAutocompleteResult {
-  const configVersion = JSON.stringify(useAIConfig());
+  const currentConfig = useAIConfig();
+  const configVersion = JSON.stringify([
+    currentConfig.provider,
+    currentConfig.customModel,
+    currentConfig.platformModel,
+    currentConfig.platformReasoning,
+    getBYOKRevision(),
+  ]);
   const [response, setResponse] = useState<Suggestion | null>(null);
   const [loadingContext, setLoadingContext] = useState<string | null>(null);
   const [isAccepting, setIsAccepting] = useState(false);
@@ -62,7 +84,9 @@ export function useAIAutocomplete({
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const acceptingRef = useRef(false);
   const offeredRef = useRef<Suggestion | null>(null);
-  const callbacksRef = useRef({ onCreditDeducted, onShowOutOfCredits });
+  const callbacksRef = useRef({ onCreditDeducted, onShowOutOfCredits, captureDocument });
+  const atomicBookId = atomicScope?.bookId,
+    atomicChapterId = atomicScope?.chapterId;
   const textBeforeCursor = content.substring(0, cursorPosition);
   const { prompt, systemInstruction } = buildAutocompletePrompt({
     textBeforeCursor,
@@ -71,6 +95,10 @@ export function useAIAutocomplete({
   });
   const context = JSON.stringify([
     typingRevision,
+    atomicBookId,
+    atomicChapterId,
+    planIds,
+    contextVersion,
     content,
     cursorPosition,
     prompt,
@@ -85,8 +113,8 @@ export function useAIAutocomplete({
   const lastTypingRevision = useRef(typingRevision);
 
   useEffect(() => {
-    callbacksRef.current = { onCreditDeducted, onShowOutOfCredits };
-  }, [onCreditDeducted, onShowOutOfCredits]);
+    callbacksRef.current = { onCreditDeducted, onShowOutOfCredits, captureDocument };
+  }, [onCreditDeducted, onShowOutOfCredits, captureDocument]);
 
   const discardSuggestion = useCallback(() => {
     controllerRef.current?.abort();
@@ -112,14 +140,31 @@ export function useAIAutocomplete({
     setLoadingContext(context);
     setError(null);
     try {
-      const text = await generateAIResponse({
-        prompt,
-        systemInstruction,
-        byokConfig: config,
-        signal: controller.signal,
-      });
+      let offer: AutocompleteOffer | undefined;
+      if (atomicBookId !== undefined && atomicChapterId !== undefined) {
+        const before = callbacksRef.current.captureDocument?.();
+        if (before == null) throw new Error('Editor indisponível para capturar o autocomplete.');
+        offer = await generateLiteraryAutocomplete(
+          { bookId: atomicBookId, chapterId: atomicChapterId, before, textBeforeCursor, planIds },
+          config,
+          controller.signal,
+        );
+      }
+      const text =
+        offer?.text ??
+        (await generateAIResponse({
+          prompt,
+          systemInstruction,
+          byokConfig: config,
+          signal: controller.signal,
+        }));
       if (!controller.signal.aborted && contextRef.current === context && text.trim()) {
-        const next = { text: text.trim(), config, context };
+        const next = {
+          text: text.trim(),
+          config: offer ? { provider: config.provider } : config,
+          context,
+          ...(offer ? { offer } : {}),
+        };
         offeredRef.current = next;
         setResponse(next);
       }
@@ -132,6 +177,9 @@ export function useAIAutocomplete({
     }
   }, [
     textBeforeCursor,
+    atomicBookId,
+    atomicChapterId,
+    planIds,
     context,
     enabled,
     prompt,
@@ -162,7 +210,10 @@ export function useAIAutocomplete({
   }, [context, debounceMs, enabled, fetchSuggestion, typingRevision]);
 
   const acceptSuggestion = useCallback(
-    async (canApply?: () => boolean): Promise<string | null> => {
+    async (
+      canApply?: () => boolean,
+      applyAtomic?: (offer: AutocompleteOffer) => Promise<void>,
+    ): Promise<string | null> => {
       const offered = offeredRef.current;
       if (
         !offered ||
@@ -178,6 +229,14 @@ export function useAIAutocomplete({
       setIsAccepting(true);
       setResponse(null);
       try {
+        if (offered.offer) {
+          if (!applyAtomic)
+            throw new Error('O aceite transacional do autocomplete não está disponível.');
+          if (offered.offer.expiresAt <= Date.now())
+            throw new Error('A sugestão expirou. Gere outra.');
+          await applyAtomic(offered.offer);
+          return null;
+        }
         if (!usesOwnKey(offered.config)) {
           if (!userId) throw new Error('Entre na sua conta para usar os créditos de IA.');
           const newTotal = await deductCredit(userId, 1);
@@ -186,7 +245,14 @@ export function useAIAutocomplete({
         return offered.text;
       } catch (error) {
         setError(error instanceof Error ? error.message : 'Falha ao debitar crédito.');
-        callbacksRef.current.onShowOutOfCredits?.();
+        if (
+          !offered.offer ||
+          (typeof error === 'object' &&
+            error !== null &&
+            'code' in error &&
+            error.code === 'functions/resource-exhausted')
+        )
+          callbacksRef.current.onShowOutOfCredits?.();
         return null;
       } finally {
         acceptingRef.current = false;
@@ -195,6 +261,15 @@ export function useAIAutocomplete({
     },
     [context, userId, setResponse, setError, setIsAccepting],
   );
+
+  useEffect(() => {
+    if (!response?.offer) return;
+    const timeout = setTimeout(
+      discardSuggestion,
+      Math.max(0, response.offer.expiresAt - Date.now()),
+    );
+    return () => clearTimeout(timeout);
+  }, [response, discardSuggestion]);
 
   const triggerManualAutocomplete = useCallback(async () => {
     if (!usesOwnKey(getBYOKConfig()) && userCredits <= 0) {
@@ -206,6 +281,7 @@ export function useAIAutocomplete({
 
   return {
     suggestion: enabled && response?.context === context ? response.text : null,
+    editorial: enabled && response?.context === context ? response.offer?.editorial : null,
     isLoading: loadingContext === context,
     isAccepting,
     error,

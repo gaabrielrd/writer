@@ -21,6 +21,7 @@ import {
   readEditorChatLore,
   editorChatNativeStamp,
   readEditorChatPersona,
+  readEditorChatEnvironment,
 } from './editorChatContextRead.mjs';
 const same = (a, b) => canonicalEditorChatJSON(a) === canonicalEditorChatJSON(b);
 const fail = () => editorChatFail('inconsistent');
@@ -45,7 +46,21 @@ function validateProof(v) {
   // This flat coherence snapshot is not an authorization cache for inherited leaves.
   editorChatClosed(v, ['source', 'environment', 'persona']);
   normalizeEditorChatDTO('source', v.source);
-  editorChatClosed(v.environment, ['localVersion', 'world', 'authorization']);
+  editorChatClosed(
+    v.environment,
+    ['localVersion', 'world', 'authorization'],
+    ['literaryToken', 'literarySelection'],
+  );
+  if (Object.hasOwn(v.environment, 'literaryToken'))
+    editorChatHashToken(v.environment.literaryToken);
+  if (Object.hasOwn(v.environment, 'literarySelection')) {
+    if (
+      !Array.isArray(v.environment.literarySelection) ||
+      v.environment.literarySelection.length > 8
+    )
+      fail();
+    v.environment.literarySelection.forEach((id) => editorChatText(id, 1500, true));
+  }
   editorChatRevision(v.environment.localVersion);
   if (v.environment.world !== null) {
     const w = v.environment.world;
@@ -320,7 +335,17 @@ async function freshness(tx, db, uid, authorized, body, turn) {
       if (snapshot?.data()?.revision !== profile.revision) return 'stale';
     }
   // Context capture may be older even if its selected origins have not changed.
-  if (!same(authorized.environment, turn.record.proofCoverage.environment)) return 'stale';
+  let environment;
+  try {
+    environment = await readEditorChatEnvironment(tx, db, authorized.source, {
+      literaryPlanIds: turn.record.proofCoverage.environment.literarySelection,
+    });
+  } catch (error) {
+    if (['failed-precondition', 'resource-exhausted', 'not-found'].includes(error.code))
+      return 'stale';
+    throw error;
+  }
+  if (!same(environment, turn.record.proofCoverage.environment)) return 'stale';
   try {
     const persona = await readEditorChatPersona(tx, db, authorized.source);
     if (!same(persona.proof.bindings, turn.record.proofCoverage.persona.bindings)) return 'stale';
@@ -397,5 +422,10 @@ export async function selectEditorChatModelHistory(tx, db, uid, conversation) {
       { role: 'assistant', text: editorChatModelAnswer(body.answer) },
     );
   }
-  return { history, messages, closure };
+  const origins = selected.map((turn) => ({
+    turnId: turn.summary.turnId,
+    attemptToken: turn.summary.attemptToken,
+    closureHash: turn.record.closureHash,
+  }));
+  return { history, messages, closure, origins };
 }

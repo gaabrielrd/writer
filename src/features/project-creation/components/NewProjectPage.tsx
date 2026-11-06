@@ -1,4 +1,5 @@
 import { useOnboarding } from '@/features/onboarding';
+import { EditorialProposalFields } from '@/features/literary-production';
 import {
   capturePageCapabilities,
   PageActionProposal,
@@ -643,47 +644,69 @@ function ProjectCreationSession() {
                 />
               </FormSection>
               {kind === 'book' && (
-                <FormSection title="Capa opcional" description="Escolha agora ou continue sem capa">
-                  <div className={styles.actions}>
-                    <Button variant="secondary" disabled={locked} onClick={() => setPicker(true)}>
-                      Escolher imagem da biblioteca
-                    </Button>
-                    {method === 'assisted' && (
-                      <Button
-                        variant="secondary"
-                        disabled={locked || !proposal.title.trim()}
-                        onClick={() => action('cover', { proposal })}
-                      >
-                        Gerar capa · {costs?.cover ?? '…'} créditos
-                      </Button>
-                    )}
-                    <Button
-                      variant="ghost"
+                <>
+                  <FormSection
+                    title="Direção editorial do livro"
+                    description={
+                      proposal.editorialContract
+                        ? 'Confira a direção proposta antes de criar'
+                        : 'Opcional: adote somente os campos relevantes'
+                    }
+                    disabled={locked}
+                  >
+                    <EditorialProposalFields
+                      value={proposal.editorialContract}
                       disabled={locked}
-                      onClick={() => {
-                        setSelectedImage(null);
-                        setUseGenerated(false);
-                      }}
-                    >
-                      Sem capa
-                    </Button>
-                  </div>
-                  {useGenerated && coverValid && (
-                    <img
-                      className={styles.cover}
-                      src={cover!.previewUrl}
-                      alt={`Capa proposta de ${proposal.title}`}
+                      onChange={(editorialContract) =>
+                        setProposal((current) => ({ ...current, editorialContract }))
+                      }
                     />
-                  )}
-                  {!useGenerated && selectedImage && (
-                    <p>Imagem selecionada: {selectedImage.name}</p>
-                  )}
-                  {useGenerated && !coverValid && (
-                    <Alert variant="warning">
-                      A capa expirou ou a proposta mudou. Gere outra ou continue sem capa.
-                    </Alert>
-                  )}
-                </FormSection>
+                  </FormSection>
+                  <FormSection
+                    title="Capa opcional"
+                    description="Escolha agora ou continue sem capa"
+                  >
+                    <div className={styles.actions}>
+                      <Button variant="secondary" disabled={locked} onClick={() => setPicker(true)}>
+                        Escolher imagem da biblioteca
+                      </Button>
+                      {method === 'assisted' && (
+                        <Button
+                          variant="secondary"
+                          disabled={locked || !proposal.title.trim()}
+                          onClick={() => action('cover', { proposal })}
+                        >
+                          Gerar capa · {costs?.cover ?? '…'} créditos
+                        </Button>
+                      )}
+                      <Button
+                        variant="ghost"
+                        disabled={locked}
+                        onClick={() => {
+                          setSelectedImage(null);
+                          setUseGenerated(false);
+                        }}
+                      >
+                        Sem capa
+                      </Button>
+                    </div>
+                    {useGenerated && coverValid && (
+                      <img
+                        className={styles.cover}
+                        src={cover!.previewUrl}
+                        alt={`Capa proposta de ${proposal.title}`}
+                      />
+                    )}
+                    {!useGenerated && selectedImage && (
+                      <p>Imagem selecionada: {selectedImage.name}</p>
+                    )}
+                    {useGenerated && !coverValid && (
+                      <Alert variant="warning">
+                        A capa expirou ou a proposta mudou. Gere outra ou continue sem capa.
+                      </Alert>
+                    )}
+                  </FormSection>
+                </>
               )}
               <p className={styles.meta}>
                 {method === 'manual'

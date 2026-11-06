@@ -1,5 +1,6 @@
 import { capturePlatformTextGeneration } from '../services/byokStorage';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { WritingSourcePicker, WritingContextPreview } from '@/features/literary-production';
 import { MessageSquare, Plus, RefreshCw, Send, Square, Eye, Trash2 } from 'lucide-react';
 import {
   Alert,
@@ -106,6 +107,11 @@ function PanelContents({
   byokRunning = false,
 }: EditorChatPanelProps) {
   const s = controller.state;
+  const [literaryPlanIds, setLiteraryPlanIds] = useState<string[] | undefined>(undefined);
+  const writingTarget = controller.scope?.target ?? s.context?.target ?? s.conversation?.target;
+  useEffect(() => {
+    queueMicrotask(() => setLiteraryPlanIds(undefined));
+  }, [s.scopeKey]);
   const [source, setSource] = useState<EditorChatCaptureSource>('auto');
   const [confirmation, setConfirmation] = useState<Confirmation | null>(null);
   const [title, setTitle] = useState('');
@@ -377,6 +383,20 @@ function PanelContents({
           <div className={styles.main}>
             <section className={styles.section} aria-label="Contexto da próxima pergunta">
               <h3>Contexto da próxima pergunta</h3>
+              {writingTarget?.kind === 'book' && (
+                <WritingSourcePicker
+                  key={s.scopeKey}
+                  bookId={writingTarget.id}
+                  value={literaryPlanIds}
+                  onChange={setLiteraryPlanIds}
+                  disabled={
+                    locked ||
+                    Boolean(
+                      s.contextRef && !['consumed', 'deleted'].includes(s.context?.phase ?? ''),
+                    )
+                  }
+                />
+              )}
               <Dropdown
                 mode="select"
                 label="Origem do trecho"
@@ -393,7 +413,13 @@ function PanelContents({
                       s.contextRef && !['consumed', 'deleted'].includes(s.context?.phase ?? ''),
                     )
                   }
-                  onClick={() => void run(() => controller.prepareContext(source))}
+                  onClick={() =>
+                    void run(() =>
+                      writingTarget?.kind === 'book' && literaryPlanIds !== undefined
+                        ? controller.prepareContext(source, literaryPlanIds)
+                        : controller.prepareContext(source),
+                    )
+                  }
                 >
                   Preparar contexto
                 </Button>
@@ -476,6 +502,9 @@ function PanelContents({
                       </p>
                     </article>
                   ))}
+                  {inspection.frozen.literary && (
+                    <WritingContextPreview snapshot={inspection.frozen.literary} />
+                  )}
                   <h4>Orientação da persona</h4>
                   <p className={styles.prose}>
                     {inspection.frozen.persona.instruction || 'Sem orientação adicional.'}

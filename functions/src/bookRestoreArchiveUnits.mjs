@@ -1,3 +1,4 @@
+import { readBookEditorialArchiveProof } from './bookEditorialHistoryOrigin.mjs';
 import { digest } from './sceneContracts.mjs';
 import {
   born,
@@ -53,6 +54,8 @@ export function readOriginalBookRestoreArchiveOperation(snapshot, loaded, readOp
   return op;
 }
 export async function prepareBookRestoreArchiveUnit(tx, db, loaded, p, readOp) {
+  // This metadata witness survives journal/source cleanup and never authorizes current-book reads.
+  if (loaded.job.cleanupVersion === 15) await readBookEditorialArchiveProof(tx, db, loaded, readOp);
   const remove = [],
     root = loaded.ref.path,
     j = loaded.job;

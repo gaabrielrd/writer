@@ -91,11 +91,12 @@ export function authorize(uid) {
   )
     restoreFail('unauthenticated', 'auth-required');
 }
-export function source(value) {
+export function source(value, allowEditorial = false) {
+  if (typeof allowEditorial !== 'boolean') inconsistent();
   closed(value, ['format', 'version', 'byteLength', 'sha256']);
   if (
     value.format === 'writer-book-archive'
-      ? value.version !== 1
+      ? ![1, ...(allowEditorial ? [2] : [])].includes(value.version)
       : value.format !== 'writer-book-backup' || ![1, 2, 3, 4, 5, 6].includes(value.version)
   )
     invalid('unsupported-source');
@@ -106,11 +107,11 @@ export function source(value) {
     sha256: restoreHash(value.sha256),
   };
 }
-export function startInput(value) {
+export function startInput(value, allowEditorial = false) {
   closed(value, ['operationId', 'source', 'reviewHash']);
   return {
     operationId: restoreId(value.operationId),
-    source: source(value.source),
+    source: source(value.source, allowEditorial),
     reviewHash: restoreHash(value.reviewHash),
   };
 }
@@ -198,7 +199,7 @@ export function jobShape(uid, id, job) {
     restoreFail('not-found', 'restore-unavailable');
   if (
     job.schemaVersion !== 1 ||
-    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(job.cleanupVersion) ||
+    ![1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(job.cleanupVersion) ||
     ![
       'uploading',
       'uploaded',
@@ -236,11 +237,11 @@ export function jobShape(uid, id, job) {
       (job.preparation.lorePayload.base === null && job.preparation.relationOffset !== 0))
   )
     inconsistent();
-  source(job.source);
+  source(job.source, true);
   if (
     requestHash('startBookRestore', {
       operationId: id,
-      source: source(job.source),
+      source: source(job.source, true),
       reviewHash: job.reviewHash,
     }) !== job.startFingerprint
   )
@@ -358,6 +359,7 @@ export function jobShape(uid, id, job) {
                     ...(job.cleanupVersion >= 7 ? ['resource-children'] : []),
                     ...(job.cleanupVersion >= 13 ? ['cover-storage'] : []),
                     ...(job.cleanupVersion >= 14 ? ['persona-library'] : []),
+                    ...(job.cleanupVersion >= 15 ? ['editorial'] : []),
                   ]
                 : []),
             ]
@@ -516,6 +518,12 @@ export function jobShape(uid, id, job) {
       inconsistent();
     preparationProgress(job.preparation);
     if (
+      (job.cleanupVersion === 15) !== Object.hasOwn(job.preparation, 'editorialAddedArtifacts') ||
+      (job.cleanupVersion === 15 &&
+        (job.source.format !== 'writer-book-archive' || job.source.version !== 2))
+    )
+      inconsistent();
+    if (
       job.cleanupVersion >= 9 &&
       [
         'universe',
@@ -540,27 +548,29 @@ export function jobShape(uid, id, job) {
     }
     if (
       !(
-        job.cleanupVersion === 14
-          ? [11, 12, 13]
-          : job.cleanupVersion === 13
-            ? [10]
-            : job.cleanupVersion === 12
-              ? [9]
-              : job.cleanupVersion === 11
-                ? [8]
-                : job.cleanupVersion === 10
-                  ? [7]
-                  : job.cleanupVersion === 9
-                    ? [5, 6]
-                    : [
-                        job.cleanupVersion === 8
-                          ? 4
-                          : job.cleanupVersion === 7
-                            ? 3
-                            : job.cleanupVersion === 6
-                              ? 2
-                              : 1,
-                      ]
+        job.cleanupVersion === 15
+          ? [13]
+          : job.cleanupVersion === 14
+            ? [11, 12, 13]
+            : job.cleanupVersion === 13
+              ? [10]
+              : job.cleanupVersion === 12
+                ? [9]
+                : job.cleanupVersion === 11
+                  ? [8]
+                  : job.cleanupVersion === 10
+                    ? [7]
+                    : job.cleanupVersion === 9
+                      ? [5, 6]
+                      : [
+                          job.cleanupVersion === 8
+                            ? 4
+                            : job.cleanupVersion === 7
+                              ? 3
+                              : job.cleanupVersion === 6
+                                ? 2
+                                : 1,
+                        ]
       ).includes(job.preparation.schemaVersion)
     )
       inconsistent();
@@ -654,7 +664,10 @@ export function jobShape(uid, id, job) {
   if (job.state === 'activated') {
     const a = validateBookRestoreActivation(job.activation);
     if (
-      job.cleanupVersion !== 14 ||
+      ![14, 15].includes(job.cleanupVersion) ||
+      (job.cleanupVersion === 15) !== Object.hasOwn(a, 'editorial') ||
+      (job.cleanupVersion === 15 &&
+        (job.source.format !== 'writer-book-archive' || job.source.version !== 2)) ||
       job.preparation.schemaVersion !== 13 ||
       job.preparation.phase !== 'activation-ready' ||
       job.preparation.audit.phase !== 'done' ||
@@ -721,8 +734,13 @@ export function preparationProgress(value) {
       ...(value?.schemaVersion >= 12 ? ['sourceIndexes'] : []),
       ...(value?.schemaVersion >= 13 ? ['audit'] : []),
     ],
-    ['lorePayload', 'retiredArtifacts', 'loreStaging'],
+    ['lorePayload', 'retiredArtifacts', 'loreStaging', 'editorialAddedArtifacts'],
   );
+  if (Object.hasOwn(value, 'editorialAddedArtifacts')) {
+    integer(value.editorialAddedArtifacts, 1);
+    if (value.schemaVersion !== 13 || value.editorialAddedArtifacts > value.artifactCount)
+      inconsistent();
+  }
   if (Object.hasOwn(value, 'lorePayload')) {
     lorePayloadProgress(value.lorePayload);
     if (value.schemaVersion < 2 || (value.phase !== 'resources' && value.lorePayload !== null))
@@ -977,8 +995,10 @@ export function preparationProgress(value) {
   }
   if (value.schemaVersion >= 13) {
     const audit = validateBookRestoreAudit(value.audit),
-      live = value.artifactCount - (value.retiredArtifacts ?? 0);
+      live =
+        value.artifactCount - (value.retiredArtifacts ?? 0) - (value.editorialAddedArtifacts ?? 0);
     if (
+      live < 0 ||
       !value.sourceIndexes.complete ||
       value.counts.step !== 'done' ||
       audit.checkedArtifacts > live ||

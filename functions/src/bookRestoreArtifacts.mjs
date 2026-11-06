@@ -1,3 +1,8 @@
+import {
+  BOOK_RESTORE_EDITORIAL_KINDS,
+  bookRestoreEditorialAddress,
+  assertBookRestoreEditorialNamespacesEmpty,
+} from './bookRestoreEditorialInventory.mjs';
 import { digest } from './sceneContracts.mjs';
 import { assertBookRestorePersonaLibraryClean } from './bookRestorePersonaLibraryBatch.mjs';
 import {
@@ -34,6 +39,12 @@ const context = (loaded) => ({
   jobToken: loaded.view.jobToken,
 });
 function address(db, loaded, kind, id, version = loaded.job.cleanupVersion) {
+  const editorial = bookRestoreEditorialAddress(loaded, kind, id, version);
+  if (editorial !== null)
+    return {
+      ref: db.doc(editorial),
+      journal: db.doc(journalPath(loaded) + '/' + digest([kind, id])),
+    };
   if (
     version >= 6 &&
     loaded.job.payloadInventoryVersion === 1 &&
@@ -196,6 +207,14 @@ async function receipt(tx, db, loaded, id) {
     ![
       'advanceBookRestoreStructure',
       ...(loaded.job.cleanupVersion >= 6 ? ['advanceBookRestoreLore'] : []),
+      ...(loaded.job.cleanupVersion >= 15
+        ? [
+            'advanceBookRestoreEditorial',
+            'advanceBookRestoreEditorialHeads',
+            'advanceBookRestoreEditorialAudit',
+            'retireBookRestoreActivation',
+          ]
+        : []),
       ...(loaded.job.cleanupVersion >= 7 ? ['advanceBookRestoreResources'] : []),
       ...(loaded.job.cleanupVersion >= 8 ? ['advanceBookRestoreCounts'] : []),
       ...(loaded.job.cleanupVersion >= 9 ? ['advanceBookRestorePersonas'] : []),
@@ -263,10 +282,26 @@ export async function prepareBookRestoreArtifacts(
 ) {
   restoreId(operationId);
   if (
-    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(version) ||
+    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(version) ||
     writes.length > (version >= 5 ? 136 : 8)
   )
     inconsistent();
+  if (
+    writes.some((write) => BOOK_RESTORE_EDITORIAL_KINDS.includes(write.kind)) &&
+    loaded.job.state !== 'content-verified'
+  )
+    inconsistent();
+  if (version === 15 && loaded.job.cleanupVersion !== 15) {
+    if (
+      loaded.job.cleanupVersion !== 14 ||
+      loaded.job.preparation?.schemaVersion !== 13 ||
+      loaded.job.preparation.phase !== 'activation-ready' ||
+      loaded.job.preparation.audit?.phase !== 'done' ||
+      loaded.job.state !== 'content-verified'
+    )
+      inconsistent();
+    await assertBookRestoreEditorialNamespacesEmpty(tx, db, loaded);
+  }
   const effects = [],
     paths = new Set();
   let created = 0;
@@ -342,6 +377,7 @@ export async function assertBookRestoreArtifactsEmpty(
   if (version >= 12) await assertBookRestoreCoverNamespacesEmpty(tx, db, loaded);
   if (version >= 13) await assertBookRestoreCoverStorageNamespaceEmpty(tx, db, loaded);
   if (version >= 14) await assertBookRestorePersonaLibraryClean(tx, db, loaded);
+  if (version >= 15) await assertBookRestoreEditorialNamespacesEmpty(tx, db, loaded);
   if (loaded.job.payloadInventoryVersion === 1)
     await assertBookRestorePayloadNamespacesEmpty(tx, db, loaded);
   for (const name of [
@@ -362,7 +398,7 @@ export async function assertBookRestoreArtifactsEmpty(
 }
 export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(loaded.job.cleanupVersion) ||
+    ![4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'artifacts'
   )
     inconsistent();
@@ -387,7 +423,14 @@ export async function prepareBookRestoreArtifactsCleanup(tx, db, loaded, limit) 
   for (const snapshot of selected) {
     const data = snapshot.data();
     if (
-      ['text-body', 'text-chunk'].includes(data?.kind) ||
+      [
+        'text-body',
+        'text-chunk',
+        'editorial-record',
+        'editorial-body',
+        'editorial-part',
+        'editorial-control',
+      ].includes(data?.kind) ||
       Object.hasOwn(BOOK_RESTORE_RESOURCE_CHILDREN, data?.kind)
     )
       inconsistent();
@@ -442,7 +485,7 @@ export async function assertBookRestoreBodyNamespaceEmpty(tx, db, loaded) {
 }
 export async function prepareBookRestoreBodyArtifactsCleanup(tx, db, loaded, limit) {
   if (
-    ![5, 6, 7, 8, 9, 10, 11, 12, 13, 14].includes(loaded.job.cleanupVersion) ||
+    ![5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'body-artifacts'
   )
     inconsistent();
@@ -532,7 +575,7 @@ export async function assertBookRestoreResourceNamespacesEmpty(tx, db, loaded) {
 /** Drain journaled nested children even when their parent has not been prepared yet. */
 export async function prepareBookRestoreResourceChildrenCleanup(tx, db, loaded, limit) {
   if (
-    ![7, 8, 9, 10, 11, 12, 13, 14].includes(loaded.job.cleanupVersion) ||
+    ![7, 8, 9, 10, 11, 12, 13, 14, 15].includes(loaded.job.cleanupVersion) ||
     loaded.job.cleanupPhase !== 'resource-children'
   )
     inconsistent();

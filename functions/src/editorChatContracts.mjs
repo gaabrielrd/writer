@@ -1,5 +1,23 @@
 // Pure, browser-safe protocol. Authorization and persistence belong to the service.
 import {
+  normalizeLiteraryWritingManifest as readLiteraryManifest,
+  normalizeLiteraryWritingSnapshot as readLiterarySnapshot,
+} from './literaryWritingProtocol.mjs';
+function normalizeLiteraryWritingManifest(value) {
+  try {
+    return readLiteraryManifest(value);
+  } catch {
+    editorChatFail();
+  }
+}
+function normalizeLiteraryWritingSnapshot(value) {
+  try {
+    return readLiterarySnapshot(value);
+  } catch {
+    editorChatFail();
+  }
+}
+import {
   normalizeChatGenerationRequest,
   CHAT_GENERATION_LIMITS,
   CHAT_REASONING_LEVELS,
@@ -461,13 +479,15 @@ export function normalizeEditorChatRequest(value) {
     ...(mutation ? ['operationId', 'requestHash'] : []),
   ];
   const optional =
-    action === 'listConversations'
-      ? ['projectToken', 'resourceToken', 'limit', 'cursor']
-      : action === 'listMessages'
-        ? ['limit', 'cursor']
-        : action === 'getAdventurePersonaBinding'
-          ? ['adventureToken']
-          : [];
+    action === 'prepareContext'
+      ? ['literaryPlanIds']
+      : action === 'listConversations'
+        ? ['projectToken', 'resourceToken', 'limit', 'cursor']
+        : action === 'listMessages'
+          ? ['limit', 'cursor']
+          : action === 'getAdventurePersonaBinding'
+            ? ['adventureToken']
+            : [];
   editorChatClosed(value, required, optional);
   const result = { action };
   for (const key of [...required, ...optional]) {
@@ -481,7 +501,11 @@ export function normalizeEditorChatRequest(value) {
     else if (key === 'resource') result.resource = normalizeEditorChatResource(v, result.target);
     else if (key === 'base') result.base = normalizeEditorChatBase(v);
     else if (key === 'capture') result.capture = normalizeEditorChatCapture(v);
-    else if (key === 'adventureId') result[key] = editorChatSourceId(v);
+    else if (key === 'literaryPlanIds') {
+      if (result.target.kind !== 'book' || !Array.isArray(v) || v.length > 8) editorChatFail();
+      result.literaryPlanIds = v.map(editorChatSourceId).sort();
+      if (new Set(result.literaryPlanIds).size !== v.length) editorChatFail();
+    } else if (key === 'adventureId') result[key] = editorChatSourceId(v);
     else if (key === 'sceneId') result[key] = nullable(v, editorChatSourceId);
     else if (key === 'value') result.value = bindingValue(v, result.sceneId);
     else if (key === 'generation') result.generation = normalizeRequestedGeneration(v);
@@ -658,6 +682,13 @@ export function normalizeEditorChatLeaf(value) {
         resourceToken: editorChatHashToken(value.resourceToken),
       };
     }
+    case 'literary':
+      editorChatClosed(value, ['kind', 'ownerId', 'manifest']);
+      return {
+        kind: 'literary',
+        ownerId: editorChatSourceId(value.ownerId),
+        manifest: normalizeLiteraryWritingManifest(value.manifest),
+      };
     case 'lore':
       editorChatClosed(value, ['kind', 'reference', 'scopeToken', 'entityIdentityToken']);
       return {
@@ -728,6 +759,17 @@ export async function verifyEditorChatClosure(value, scope = {}) {
   )
     editorChatFail('inconsistent');
   for (const leaf of normalized.leaves) {
+    if (
+      leaf.kind === 'literary' &&
+      ((scope.ownerId && leaf.ownerId !== scope.ownerId) ||
+        (scope.target &&
+          canonicalEditorChatJSON(leaf.manifest.target) !==
+            canonicalEditorChatJSON(scope.target)) ||
+        (scope.resource &&
+          canonicalEditorChatJSON(leaf.manifest.resource) !==
+            canonicalEditorChatJSON(scope.resource)))
+    )
+      editorChatFail('provenance-revoked');
     if (scope.ownerId && leaf.kind === 'persona' && leaf.ownerId !== scope.ownerId)
       editorChatFail('provenance-revoked');
     if (
@@ -968,7 +1010,11 @@ function personaSnapshot(v) {
   });
 }
 function frozenContext(v) {
+  plain(v);
   const r = shape(v, {
+    ...(Object.hasOwn(v, 'literary')
+      ? { literary: (value) => nullable(value, normalizeLiteraryWritingSnapshot) }
+      : {}),
     schemaVersion: schema,
     matcherVersion: schema,
     capturedAt: date,
@@ -1458,6 +1504,21 @@ export async function verifyEditorChatSnapshot(value) {
   });
   const { contextHash, ...body } = r;
   if (contextHash !== (await editorChatHash(body))) editorChatFail('inconsistent');
+  if (
+    r.literary &&
+    (r.literary.stateToken !== (await editorChatHash(r.literary.manifest)) ||
+      r.literary.mode !== 'chat' ||
+      canonicalEditorChatJSON(r.literary.manifest.target) !==
+        canonicalEditorChatJSON(r.source.target) ||
+      canonicalEditorChatJSON(r.literary.manifest.resource) !==
+        canonicalEditorChatJSON(r.source.resource) ||
+      !r.closure.leaves.some(
+        (leaf) =>
+          leaf.kind === 'literary' &&
+          canonicalEditorChatJSON(leaf.manifest) === canonicalEditorChatJSON(r.literary.manifest),
+      ))
+  )
+    editorChatFail('inconsistent');
   const targetLeaf = r.closure.leaves.find((l) => l.kind === 'target');
   if (
     !targetLeaf ||

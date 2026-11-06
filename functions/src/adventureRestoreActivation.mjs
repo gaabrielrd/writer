@@ -17,6 +17,7 @@ import {
   adventurePersonaBatchEffect,
 } from './adventureRestorePersonaLibraryBatch.mjs';
 import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
+import { preparePersonaCatalogWrite } from './personaCatalogClock.mjs';
 
 const ACTIVATE = 'activateAdventureRestore',
   RETIRE = 'retireAdventureRestoreActivation';
@@ -120,10 +121,13 @@ export function createAdventureRestoreActivationService(store) {
             state: 'active',
             lastOperationId: request.operationId,
           };
+        const personaCatalog =
+          batch.profileCount > 0 ? await preparePersonaCatalogWrite(tx, store.db, uid) : null;
         const effects = [
           store.effect('root', loaded.job.adventureId, root),
           adventurePersonaBatchEffect(store, loaded, batch),
         ];
+        personaCatalog?.commit();
         reviewed.universe.commit();
         tx.set(store.refs.root(loaded.job.adventureId), root);
         tx.update(reviewed.control.targetRef, control);

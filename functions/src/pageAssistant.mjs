@@ -1,3 +1,5 @@
+import { editorialStored } from './literaryContracts.mjs';
+import { composeEditorialContract } from './literaryEditorialComposition.mjs';
 import {
   normalizePageCapabilities,
   pageProviderCapabilities,
@@ -50,6 +52,29 @@ export function createPageAssistantService({ db, generator, now = Date.now }) {
       universeId: kind === 'universe' ? id : root.universeId,
       personaId: root.personaId,
     });
+    let editorial = null,
+      editorialProof = null;
+    if (kind === 'book') {
+      const snapshot = await tx.get(db.doc(`books/${id}/literaryProduction/current`));
+      if (snapshot.exists) {
+        const stored = editorialStored(snapshot.data()),
+          stamp = snapshot.createTime;
+        if (!Number.isSafeInteger(stamp?.seconds) || !Number.isSafeInteger(stamp?.nanoseconds))
+          fail('failed-precondition', 'A identidade do guia editorial não está disponível.');
+        editorialProof = {
+          birth: [stamp.seconds, stamp.nanoseconds],
+          revision: stored.revision,
+          contractHash: hash(stored.contract),
+        };
+        editorial = {
+          bookId: id,
+          revision: stored.revision,
+          scope: 'editorial-contract-only',
+          instruction: composeEditorialContract(stored.contract).instruction,
+          wholeBook: false,
+        };
+      }
+    }
     let conception = null;
     if (kind !== 'universe') {
       const session = (await tx.get(db.doc(`users/${uid}/assistedSessions/${id}`))).data();
@@ -68,6 +93,7 @@ export function createPageAssistantService({ db, generator, now = Date.now }) {
         id,
         birth: { seconds: birth.seconds, nanoseconds: birth.nanoseconds },
         context: context.proof,
+        editorial: editorialProof,
         revision: root.revision ?? 0,
         updatedAt: root.updatedAt,
       }),
@@ -77,6 +103,7 @@ export function createPageAssistantService({ db, generator, now = Date.now }) {
         synopsis: root.synopsis ?? root.description ?? '',
         conception,
         ...context.content,
+        ...(editorial ? { editorial } : {}),
       },
     };
   }
@@ -121,7 +148,12 @@ export function createPageAssistantService({ db, generator, now = Date.now }) {
       });
       const reply = text(result?.reply, 6000);
       const action = normalizePageAction(result.action, capabilities);
-      return { reply, action, contextProof: captured.proof };
+      return {
+        reply,
+        action,
+        contextProof: captured.proof,
+        ...(captured.content?.editorial ? { editorialContext: captured.content.editorial } : {}),
+      };
     },
   };
 }

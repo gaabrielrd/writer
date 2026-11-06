@@ -225,12 +225,13 @@ test('a 200-chapter batch shares one root advance for create and removal', async
   assert.equal((await admin.collection('books/book/chapters').get()).size, 1);
   assert.notEqual((await source()).sourceToken, middle.sourceToken);
 });
-test('direct chapter metadata remains allowed and proves why a separate native readset is still needed', async () => {
+test('SDK metadata requires a root clock and isolated native metadata proves why a separate readset is still needed', async () => {
   const before = await source();
   const chapterBefore = await admin.doc('books/book/chapters/existing').get();
-  await assertSucceeds(
+  await assertFails(
     updateDoc(doc(client(), 'books/book/chapters/existing'), { title: 'Título revisto' }),
   );
+  await admin.doc('books/book/chapters/existing').update({ title: 'Título revisto' });
   const chapterAfter = await admin.doc('books/book/chapters/existing').get();
   assert.equal(chapterAfter.data().title, 'Título revisto');
   assert.equal(chapterBefore.updateTime.isEqual(chapterAfter.updateTime), false);

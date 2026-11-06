@@ -1,3 +1,4 @@
+import { setPersonaWithCatalog } from './helpers/personaCatalog.mjs';
 import { readFile } from 'node:fs/promises';
 import { createRequire } from 'node:module';
 import assert from 'node:assert/strict';
@@ -7,7 +8,7 @@ import {
   assertFails,
   assertSucceeds,
 } from '@firebase/rules-unit-testing';
-import { doc, getDoc, setDoc, deleteDoc } from 'firebase/firestore';
+import { doc, getDoc, deleteDoc } from 'firebase/firestore';
 import { createBookBackupReadService } from '../../functions/src/bookBackupRead.mjs';
 import { createBookBackupDraftService } from '../../functions/src/bookBackupDraftRead.mjs';
 import { DEFAULT_PERSONAS } from '../../functions/src/personaProfile.mjs';
@@ -78,7 +79,7 @@ test('real SDK style edit leaves root unchanged but invalidates old explicit-sty
     old = await read(pin),
     db = environment.authenticatedContext('author').firestore();
   await assertSucceeds(
-    setDoc(doc(db, 'users/author/aiPersonas/' + profile.id), {
+    setPersonaWithCatalog(db, doc(db, 'users/author/aiPersonas/' + profile.id), {
       ...profile,
       revision: 2,
       instructions: 'New style',

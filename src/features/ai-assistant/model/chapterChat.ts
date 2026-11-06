@@ -1,4 +1,5 @@
 import type { LoreContextItem } from './aiPrompt';
+import type { EditorialContract, LiteraryWritingSnapshot } from '@/features/literary-production';
 import type { WritingPersonaContext } from './persona';
 import type { ChatReasoningLevel, ChatGeneration } from './chatGeneration';
 
@@ -10,6 +11,9 @@ export interface ChatTarget {
 }
 export interface ChatContext {
   source: Exclude<ChatContextSource, 'auto'>;
+  editorial?: { revision: number; contract: EditorialContract };
+  writing?: LiteraryWritingSnapshot;
+  literaryPlanIds?: string[];
   text: string;
   surrounding: string;
   target: ChatTarget | null;
@@ -20,6 +24,8 @@ export interface ChatContext {
   lore: (LoreContextItem & { scope?: 'local' | 'global'; details?: string })[];
 }
 export interface ChatMessage {
+  messageInstance?: string;
+  generationAttempt?: string;
   id: string;
   role: 'user' | 'assistant';
   text: string;
@@ -33,6 +39,7 @@ export interface ChatMessage {
   generation?: ChatGeneration;
 }
 export interface ChatConversation {
+  draftEpoch?: number;
   id: string;
   title: string;
   updatedAt: number;

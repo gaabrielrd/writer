@@ -1,3 +1,6 @@
+import { createBookEditorialCaptureService } from './bookEditorialCapture.mjs';
+import { createLiteraryImpactService } from './literaryImpact.mjs';
+import { createLiteraryBookMapService } from './literaryBookMap.mjs';
 import { createPageAssistantService } from './pageAssistant.mjs';
 import { createPersonaGenerationService } from './personaGeneration.mjs';
 import { createUniverseService } from './universes.mjs';
@@ -36,14 +39,59 @@ import { createLoreAnalysisService } from './loreAnalysis.mjs';
 import { createAssistedBookService } from './assistedBook.mjs';
 import { createImageLibraryService } from './imageLibrary.mjs';
 
+import { createLiteraryProductionService } from './literaryProduction.mjs';
+import { createLiteraryProgressService } from './literaryProgress.mjs';
+import { createLiteraryPublicationService } from './literaryPublication.mjs';
+import { createLiteraryPublicationGuideService } from './literaryPublicationGuide.mjs';
+import { createLiteraryPublicationConfirmationService } from './literaryPublicationConfirmation.mjs';
+import { createLiteraryPlanningService } from './literaryPlanning.mjs';
+import { createLiteraryAIService } from './literaryAI.mjs';
+import { createLiteraryWritingService } from './literaryWritingContext.mjs';
+import { createLiteraryPreparationService } from './literaryPreparation.mjs';
+import { createLiteraryMilestoneService } from './literaryMilestones.mjs';
+import { createLiteraryProseService } from './literaryProse.mjs';
+import { createLiteraryReviewService } from './literaryReview.mjs';
+import { createLiteraryIntegrationService } from './literaryIntegration.mjs';
+import { createLiteraryFindingService } from './literaryFindings.mjs';
+import { createLiteraryIntegrationRecheckService } from './literaryIntegrationRecheck.mjs';
+import { createLiterarySequenceDriver } from './literarySequenceDriver.mjs';
+import { createLiteraryWorkflowService } from './literaryWorkflow.mjs';
+import { createLiteraryDraftService } from './literaryDrafting.mjs';
+import { createLiteraryAutocompleteService } from './literaryAutocomplete.mjs';
+
 export const DOMAIN_SERVICES = {
   booksApi: ['studio', 'workProgress', 'generation'],
   workApi: ['workHistory', 'workProgress'],
   loreApi: ['bookLoreRead', 'universeService', 'loreAnalysis'],
-  planningApi: ['narrative', 'scenes'],
+  planningApi: [
+    'literaryImpact',
+    'literaryPublicationGuide',
+    'literaryPublicationConfirmation',
+    'literaryPublication',
+    'literaryProgress',
+    'narrative',
+    'scenes',
+    'literaryProduction',
+    'literaryPlanning',
+    'literaryBookMap',
+    'literaryAI',
+    'literaryWriting',
+    'literaryPreparation',
+    'literaryMilestones',
+    'literaryProse',
+    'literaryReview',
+    'literaryIntegration',
+    'literaryFindings',
+    'literaryIntegrationRecheck',
+    'literaryDraft',
+    'literaryWorkflow',
+    'literarySequence',
+    'literaryAutocomplete',
+  ],
   adventuresApi: ['adventureLore', 'adventurePreview', 'adventureBlocks', 'studio'],
   adventurePortabilityApi: ['adventureImport'],
   bookPortabilityApi: [
+    'bookEditorialCapture',
     'bookBackupCover',
     'bookBackupDraft',
     'bookBackupUniverse',
@@ -72,7 +120,20 @@ export const DOMAIN_SERVICES = {
     'campaignCapture',
     'campaignVariantRemoteRecovery',
   ],
-  generationApi: ['personas', 'assisted', 'pageAssistant', 'generation'],
+  generationApi: [
+    'personas',
+    'assisted',
+    'pageAssistant',
+    'generation',
+    'literaryAI',
+    'literaryProse',
+    'literaryReview',
+    'literaryIntegration',
+    'literaryDraft',
+    'literaryWorkflow',
+    'literarySequence',
+    'literaryAutocomplete',
+  ],
   mediaApi: ['generation', 'imageLibrary'],
   loreAnalysisApi: ['loreAnalysis'],
 };
@@ -90,6 +151,42 @@ export function createSectorServices({
   personaGenerator,
 }) {
   const SERVICE_FACTORIES = {
+    bookEditorialCapture: () => createBookEditorialCaptureService({ db }),
+    literaryImpact: () => createLiteraryImpactService({ db }),
+    literaryProgress: () => createLiteraryProgressService({ db }),
+    literaryPublication: () => createLiteraryPublicationService({ db }),
+    literaryPublicationGuide: () => createLiteraryPublicationGuideService({ db }),
+    literaryPublicationConfirmation: () => createLiteraryPublicationConfirmationService({ db }),
+    literaryProduction: () => createLiteraryProductionService({ db }),
+    literaryPlanning: () => createLiteraryPlanningService({ db }),
+    literaryBookMap: () => createLiteraryBookMapService({ db }),
+    literaryAI: () => createLiteraryAIService({ db, generator: assistedGenerator }),
+    literaryWriting: () => createLiteraryWritingService({ db }),
+    literaryPreparation: () => createLiteraryPreparationService({ db }),
+    literaryMilestones: () => createLiteraryMilestoneService({ db }),
+    literaryProse: () => createLiteraryProseService({ db, generator: assistedGenerator }),
+    literaryReview: () =>
+      createLiteraryReviewService({
+        db,
+        generator: assistedGenerator,
+        prose: createLiteraryProseService({ db, generator: assistedGenerator }),
+        milestones: createLiteraryMilestoneService({ db }),
+      }),
+    literaryIntegration: () =>
+      createLiteraryIntegrationService({ db, generator: assistedGenerator }),
+    literaryFindings: () => createLiteraryFindingService({ db }),
+    literaryIntegrationRecheck: () => createLiteraryIntegrationRecheckService({ db }),
+    literarySequence: () => createLiterarySequenceDriver({ db, generator: assistedGenerator }),
+    literaryWorkflow: () => createLiteraryWorkflowService({ db, generator: assistedGenerator }),
+    literaryDraft: () =>
+      createLiteraryDraftService({
+        db,
+        generator: assistedGenerator,
+        prose: createLiteraryProseService({ db, generator: assistedGenerator }),
+        milestones: createLiteraryMilestoneService({ db }),
+      }),
+    literaryAutocomplete: () =>
+      createLiteraryAutocompleteService({ db, generator: assistedGenerator }),
     universeService: () => createUniverseService({ db }),
     studio: () => createStudioService({ db }),
     adventureImport: () => createAdventureImportService({ db }),

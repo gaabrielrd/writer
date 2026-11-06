@@ -1,4 +1,5 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState } from 'react';
+import { getLiteraryWritingContext } from '@/features/literary-production';
 import {
   chapterChatCall,
   createChapterChat,
@@ -43,6 +44,11 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
   const partialRef = useRef('');
   const draftRef = useRef('');
   const changing = useRef(false);
+  const mutation = useRef<{ key: string; id: string } | null>(null);
+  const activeScope = useRef(JSON.stringify([uid, bookId, chapterId]));
+  useLayoutEffect(() => {
+    activeScope.current = JSON.stringify([uid, bookId, chapterId]);
+  }, [uid, bookId, chapterId]);
   useEffect(() => {
     mounted.current = true;
     let active = true;
@@ -63,7 +69,14 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
         request.current =
           recoveredMessage && ['done', 'stopped'].includes(recoveredMessage.state)
             ? null
-            : (recovery?.request ?? null);
+            : recovery?.request
+              ? {
+                  ...recovery.request,
+                  ...(recoveredMessage?.messageInstance
+                    ? { messageInstance: recoveredMessage.messageInstance }
+                    : {}),
+                }
+              : null;
         const text = recovery?.draft ?? result.conversation?.draft ?? '';
         draftRef.current = text;
         setDraft(text);
@@ -87,6 +100,9 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
         void chapterChatCall(selected.current, {
           action: 'stop',
           requestId: request.current.requestId,
+          ...(request.current.messageInstance
+            ? { messageInstance: request.current.messageInstance }
+            : {}),
           partial: partialRef.current,
         }).catch(() => undefined);
     };
@@ -152,7 +168,9 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
       draft: text,
       ...(request.current ? { request: request.current } : {}),
     });
-    await chapterChatCall(identity, { action: 'draft', draft: text });
+    const draftEpoch =
+      page.conversation?.id === identity.conversationId ? (page.conversation?.draftEpoch ?? 0) : 0;
+    await chapterChatCall(identity, { action: 'draft', draft: text, draftEpoch });
   }
   useEffect(() => {
     if (loading || (!draft && !selected.current.conversationId)) return;
@@ -201,18 +219,36 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
     setPartial('');
     partialRef.current = '';
     try {
+      const generation =
+        retry && request.current
+          ? request.current.generation
+          : captureChatGeneration(
+              page.conversation
+                ? normalizeChatReasoning(page.conversation.reasoning)
+                : readChatReasoningDefault(uid),
+            );
+      let editorialContext = context;
+      if (!retry) {
+        const writing = await getLiteraryWritingContext({
+          target: { kind: 'book', id: bookId },
+          resource: { kind: 'chapter', id: chapterId },
+          ...(context.literaryPlanIds === undefined ? {} : { planIds: context.literaryPlanIds }),
+        });
+        if (abort.signal.aborted || !mounted.current) return;
+        editorialContext = { ...context };
+        delete editorialContext.editorial;
+        delete editorialContext.writing;
+        if (writing) editorialContext.writing = writing;
+      }
       const pending =
         retry && request.current
           ? request.current
           : {
               requestId: crypto.randomUUID(),
+              messageInstance: crypto.randomUUID(),
               text: value.trim(),
-              context,
-              generation: captureChatGeneration(
-                page.conversation
-                  ? normalizeChatReasoning(page.conversation.reasoning)
-                  : readChatReasoningDefault(uid),
-              ),
+              context: editorialContext,
+              generation,
             };
       const identity = await ensureConversation(value);
       if (abort.signal.aborted || !mounted.current) return;
@@ -227,6 +263,7 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
         )?.createdAt ?? Date.now();
       mergeMessage({
         id: `${pending.requestId}-user`,
+        ...(pending.messageInstance ? { messageInstance: pending.messageInstance } : {}),
         role: 'user',
         text: pending.text,
         state: 'done',
@@ -276,11 +313,15 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
     const running =
       pending?.requestId ?? page.messages.find((item) => item.state === 'running')?.id;
     if (!running) return;
+    const messageInstance =
+      pending?.messageInstance ??
+      page.messages.find((item) => item.id === running)?.messageInstance;
     changing.current = true;
     try {
       await chapterChatCall(identity, {
         action: 'stop',
         requestId: running,
+        ...(messageInstance ? { messageInstance } : {}),
         partial: partialRef.current,
       });
       request.current = null;
@@ -318,29 +359,69 @@ export function useChapterChat(uid: string, bookId: string, chapterId: string) {
       setLoading(false);
     }
   }
+  function operationIdentity(action: 'edit' | 'delete', message?: ChatMessage) {
+    const identity = { ...selected.current },
+      scope = JSON.stringify([uid, bookId, chapterId]);
+    const key = JSON.stringify([
+      scope,
+      identity.conversationId,
+      action,
+      message?.id ?? null,
+      message?.createdAt ?? null,
+    ]);
+    if (mutation.current?.key !== key) mutation.current = { key, id: crypto.randomUUID() };
+    const mutationId = mutation.current.id;
+    const current = () =>
+      activeScope.current === scope &&
+      selected.current.bookId === identity.bookId &&
+      selected.current.chapterId === identity.chapterId &&
+      selected.current.conversationId === identity.conversationId;
+    return { identity, mutationId, current };
+  }
   async function removeConversation() {
+    const operation = operationIdentity('delete');
+    setLoading(true);
     try {
-      await chapterChatCall(selected.current, { action: 'delete' });
-      clearChatRecovery(uid, bookId, chapterId, selected.current.conversationId!);
+      await chapterChatCall(operation.identity, {
+        action: 'delete',
+        mutationId: operation.mutationId,
+      });
+      if (mutation.current?.id === operation.mutationId) mutation.current = null;
+      if (!operation.current()) return;
+      clearChatRecovery(uid, bookId, chapterId, operation.identity.conversationId!);
       selected.current = { bookId, chapterId };
       setLoading(true);
       setAttempt((value) => value + 1);
     } catch (cause) {
-      setError((cause as Error).message);
+      if (operation.current()) {
+        setError((cause as Error).message);
+        setLoading(false);
+      }
     }
   }
   async function edit(message: ChatMessage) {
+    const operation = operationIdentity('edit', message),
+      draftBefore = draftRef.current,
+      priorRequest = request.current;
+    setLoading(true);
     try {
-      await chapterChatCall(selected.current, {
+      await chapterChatCall(operation.identity, {
         action: 'edit',
+        mutationId: operation.mutationId,
         before: message.createdAt,
         draft: message.text,
       });
-      request.current = null;
-      setPage(await loadChapterChat(selected.current));
-      changeDraft(message.text);
+      if (mutation.current?.id === operation.mutationId) mutation.current = null;
+      if (!operation.current()) return;
+      const updated = await loadChapterChat(operation.identity);
+      if (!operation.current()) return;
+      if (request.current === priorRequest) request.current = null;
+      setPage(updated);
+      if (draftRef.current === draftBefore) changeDraft(message.text);
     } catch (cause) {
-      setError((cause as Error).message);
+      if (operation.current()) setError((cause as Error).message);
+    } finally {
+      if (operation.current()) setLoading(false);
     }
   }
   async function older() {

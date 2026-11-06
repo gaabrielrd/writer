@@ -6,6 +6,8 @@ import {
   DEFAULT_PLATFORM_REASONING,
   resolvePlatformTextGeneration,
   geminiTextGenerationOptions,
+  chatProviderGenerationOptions,
+  type ChatGeneration,
 } from '../model/chatGeneration';
 import { getBYOKConfig } from './byokStorage';
 
@@ -16,6 +18,7 @@ export interface GenerateAIOptions {
   signal?: AbortSignal;
   maxOutputTokens?: number;
   json?: boolean;
+  frozenGeneration?: ChatGeneration;
 }
 
 export async function generateAIResponse({
@@ -25,6 +28,7 @@ export async function generateAIResponse({
   signal,
   maxOutputTokens,
   json = false,
+  frozenGeneration,
 }: GenerateAIOptions): Promise<string> {
   signal?.throwIfAborted();
   const validation = validateBYOKConfig(byokConfig);
@@ -46,8 +50,14 @@ export async function generateAIResponse({
       body: JSON.stringify({
         model: byokConfig.customModel || 'gpt-4o-mini',
         messages,
-        temperature: 0.7,
-        max_tokens: maxOutputTokens ?? 500,
+        ...(frozenGeneration
+          ? (() => {
+              const options = chatProviderGenerationOptions(frozenGeneration);
+              return 'max_completion_tokens' in options
+                ? { ...options, max_completion_tokens: maxOutputTokens ?? 1024 }
+                : { ...options, max_tokens: maxOutputTokens ?? 1024 };
+            })()
+          : { temperature: 0.7, max_tokens: maxOutputTokens ?? 500 }),
         ...(json ? { response_format: { type: 'json_object' } } : {}),
       }),
       signal,
@@ -77,12 +87,13 @@ export async function generateAIResponse({
     const bodyPayload: {
       contents: Array<{ parts: Array<{ text: string }> }>;
       systemInstruction?: { parts: Array<{ text: string }> };
-      generationConfig?: { maxOutputTokens: number; responseMimeType: string };
+      generationConfig?: Record<string, unknown>;
     } = {
       contents: [{ parts: [{ text: prompt }] }],
     };
     if (json)
       bodyPayload.generationConfig = {
+        ...(frozenGeneration ? chatProviderGenerationOptions(frozenGeneration) : {}),
         maxOutputTokens: maxOutputTokens ?? 12000,
         responseMimeType: 'application/json',
       };
@@ -108,14 +119,21 @@ export async function generateAIResponse({
     }
 
     interface GeminiCandidate {
-      content?: { parts?: Array<{ text?: string }> };
+      content?: { parts?: Array<{ text?: string; thought?: boolean }> };
     }
     const data = (await response.json()) as {
       candidates?: (GeminiCandidate & { finishReason?: string })[];
     };
     if (json && data.candidates?.[0]?.finishReason !== 'STOP')
       throw new Error('Análise interrompida pelo provedor. Nenhuma alteração foi aplicada.');
-    const textPart = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
+    const parts = data.candidates?.[0]?.content?.parts;
+    const textPart = frozenGeneration
+      ? (parts ?? [])
+          .filter((part) => !part.thought)
+          .map((part) => part.text ?? '')
+          .join('')
+          .trim()
+      : parts?.[0]?.text?.trim() || '';
     return textPart;
   }
 

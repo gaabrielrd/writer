@@ -421,3 +421,25 @@ test('a late stale read resolves the receipt when an identical twin already comm
   assert.deepEqual(result, fast);
   assert.equal(result.progress.checkpoint, p.checkpoint + 1);
 });
+
+test('native v1 reservation rejects fully sealed v2 bytes instead of validating a downgraded descriptor', async () => {
+  const records = [
+    ...fixture(),
+    record('book-editorial', 'book', {
+      schemaVersion: 1,
+      bookId: 'book',
+      presence: 'captured',
+      artifacts: 0,
+      links: 0,
+    }),
+  ];
+  const src = await source(records, 'book', 2),
+    bytes = await src.read(0, src.size),
+    f = setup();
+  const { p } = await ready(f, bytes),
+    done = await finish(f, p, { fresh: true });
+  assert.equal(done.state, 'content-rejected');
+  assert.equal(done.validation.failure, 'invalid-record');
+  assert.equal(f.records.has('books/' + done.bookId), false);
+  await cleanup(f, done);
+});

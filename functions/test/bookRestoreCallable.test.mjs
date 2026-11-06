@@ -39,6 +39,11 @@ const expected = [
   'advanceBookRestoreArchiveCleanup',
 ];
 const internal = [
+  'openVerifiedBookRestoreEditorialAudit',
+  'advanceBookRestoreEditorialAudit',
+  'advanceBookRestoreEditorialHeads',
+  'advanceBookRestoreEditorial',
+  'getBookRestoreEditorial',
   'openPreparedBookRestoreLore',
   'openVerifiedBookRestoreContent',
   'openVerifiedBookRestoreSource',

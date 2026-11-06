@@ -3,12 +3,14 @@ import { Alert, Button, Dialog, Input, Dropdown, Textarea, LoadingState } from '
 import { analyzeLoreWithBYOK, useAIConfig, usesOwnKey } from '@/features/ai-assistant';
 import {
   analyzeChapterLore,
+  getLoreAnalysisEditorialContext,
   prepareBYOKLore,
   applyLoreAnalysis,
   matchingLoreEntities,
   loreChangeFields,
   type DetectedLoreEntity,
   type LoreAnalysis,
+  type LoreAnalysisEditorialContext,
   type LoreEntity,
   type LoreChange,
 } from '@/features/lore';
@@ -21,6 +23,7 @@ interface Proposal {
   selected: boolean;
   fields: Set<string>;
   aliasesText?: string;
+  authorEdited?: boolean;
 }
 interface Props {
   bookId: string;
@@ -39,6 +42,11 @@ const labels = {
   details: 'Ficha detalhada',
   aliases: 'Apelidos',
 };
+const claimLabels = {
+  observed: 'Observação textual',
+  interpretation: 'Interpretação',
+  proposal: 'Proposta',
+} as const;
 const categories = [
   { value: 'character', label: 'Personagem' },
   { value: 'location', label: 'Local' },
@@ -73,6 +81,9 @@ export function LoreAnalysisDialog({
   const configKey = JSON.stringify(config);
   const currentText = chapterText(content);
   const [analysis, setAnalysis] = useState<LoreAnalysis | null>(null);
+  const [editorialContext, setEditorialContext] = useState<LoreAnalysisEditorialContext | null>(
+    null,
+  );
   const [snapshot, setSnapshot] = useState<{
     text: string;
     configKey: string;
@@ -111,12 +122,25 @@ export function LoreAnalysisDialog({
     setPhase('analyzing');
     setError(null);
     setAnalysis(null);
+    setEditorialContext(null);
     setPendingApply(null);
     try {
       if (!currentText) throw new Error('Escreva no capítulo antes de analisar.');
+      const editorial = await getLoreAnalysisEditorialContext(bookId, chapterId);
+      if (abort.signal.aborted) return;
+      if (
+        editorial.bookId !== bookId ||
+        editorial.chapterId !== chapterId ||
+        editorial.scope !== 'editorial-contract-only' ||
+        editorial.wholeBook !== false ||
+        !/^[a-f0-9]{64}$/.test(editorial.contextToken)
+      )
+        throw new Error('O contexto editorial retornado não corresponde a este capítulo.');
+      setEditorialContext(editorial);
       const request = {
         bookId,
         chapterId,
+        editorialContextToken: editorial.contextToken,
         text: currentText,
         content,
         loreVersions: entities.map((entity): [string, number] => [entity.id, entity.updatedAt]),
@@ -125,17 +149,18 @@ export function LoreAnalysisDialog({
       const result = usesOwnKey(config)
         ? await prepareBYOKLore(
             request,
-            await analyzeLoreWithBYOK(currentText, entities, config, abort.signal),
+            await analyzeLoreWithBYOK(currentText, entities, config, abort.signal, editorial),
           )
         : await analyzeChapterLore(request);
       if (abort.signal.aborted) return;
       setAnalysis(result);
+      if (result.editorialContext) setEditorialContext(result.editorialContext);
       setProposals(
         result.entities.map((detected) => {
           const matches = matchingLoreEntities(detected, entities);
           const target = matches.length > 1 ? '' : (matches[0]?.id ?? 'new:local');
           const fields = differentFields(detected, matches[0]);
-          return { detected, target, fields, selected: Boolean(target) && fields.size > 0 };
+          return { detected, target, fields, selected: false };
         }),
       );
       setPhase('review');
@@ -197,7 +222,11 @@ export function LoreAnalysisDialog({
   };
   const edit = (index: number, update: Partial<Proposal>) =>
     setProposals((previous) =>
-      previous.map((item, i) => (i === index ? { ...item, ...update } : item)),
+      previous.map((item, i) =>
+        i === index
+          ? { ...item, ...update, ...(update.detected ? { authorEdited: true } : {}) }
+          : item,
+      ),
     );
   const locked = phase === 'applying' || Boolean(pendingApply);
   return (
@@ -251,6 +280,22 @@ export function LoreAnalysisDialog({
           O texto, as configurações de IA ou o compêndio mudou. Analise novamente.
         </Alert>
       )}
+      {editorialContext && (
+        <details>
+          <summary>Guia editorial utilizado · revisão {editorialContext.revision}</summary>
+          <p>
+            Escopo: contrato e decisões editoriais. Não inclui leitura integral do livro e não é
+            evidência de fatos do capítulo.
+          </p>
+          {editorialContext.present ? (
+            <pre className={`${styles.evidence} ${styles.editorialContext}`}>
+              {editorialContext.instruction}
+            </pre>
+          ) : (
+            <p>Este livro não tem contrato editorial salvo.</p>
+          )}
+        </details>
+      )}
       {phase === 'analyzing' && <LoadingState label="Buscando entidades em todo o capítulo..." />}
       {phase === 'done' && <p role="status">Lote aplicado. O compêndio foi atualizado.</p>}
       {phase === 'review' || phase === 'applying' ? (
@@ -287,6 +332,48 @@ export function LoreAnalysisDialog({
                   <span>{status}</span>
                 </div>
                 <blockquote className={styles.evidence}>{proposal.detected.evidence}</blockquote>
+                <p>
+                  {proposal.detected.claims
+                    ? 'Classificação sugerida pela IA: ' +
+                      [
+                        ...new Set(
+                          proposal.detected.claims.items.map((claim) => claimLabels[claim.kind]),
+                        ),
+                      ].join(' · ')
+                    : 'Sem classificação estruturada. Este resultado não é tratado como fato observado.'}
+                </p>
+                <p>
+                  Confira os campos e selecione explicitamente a sugestão. A evidência literal não
+                  certifica, por si só, a verdade de uma interpretação.
+                </p>
+                {proposal.authorEdited && (
+                  <Alert>
+                    Os campos foram editados pelo autor. A classificação abaixo pertence à sugestão
+                    original; confira sua correspondência com o texto atual.
+                  </Alert>
+                )}
+                {proposal.detected.claims && (
+                  <details>
+                    <summary>Revisar classificação das afirmações</summary>
+                    <ul>
+                      {proposal.detected.claims.items.map((claim, claimIndex) => (
+                        <li key={claimIndex}>
+                          <strong>
+                            {labels[claim.field]} · {claimLabels[claim.kind]}
+                          </strong>
+                          <p>{claim.text}</p>
+                          <blockquote className={styles.evidence}>{claim.evidence}</blockquote>
+                          {claim.rationale && <p>Justificativa: {claim.rationale}</p>}
+                        </li>
+                      ))}
+                    </ul>
+                    <p>
+                      Classificação parcial de afirmações, não certificação integral da ficha. Fala,
+                      crença e intenção preservam seu alcance no texto.
+                    </p>
+                  </details>
+                )}
+
                 <Dropdown
                   mode="select"
                   id={`target-${index}`}
@@ -311,7 +398,7 @@ export function LoreAnalysisDialog({
                       proposal.detected,
                       entities.find((entity) => entity.id === target),
                     );
-                    edit(index, { target, fields, selected: Boolean(target) && fields.size > 0 });
+                    edit(index, { target, fields, selected: false });
                   }}
                 />
                 {(existing?.universeId || proposal.target === 'new:global') && (

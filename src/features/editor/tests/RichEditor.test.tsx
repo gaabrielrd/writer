@@ -114,6 +114,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   accept.mockResolvedValue('continuação segura');
   vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+    editorial: null,
     suggestion: null,
     isLoading: false,
     isAccepting: false,
@@ -410,6 +411,7 @@ describe('RichEditor WYSIWYG', () => {
         }),
     );
     vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+      editorial: null,
       suggestion: 'continuação segura',
       isLoading: false,
       isAccepting: false,
@@ -456,6 +458,7 @@ describe('RichEditor WYSIWYG', () => {
 
   it('consome Escape quando uma sugestão está aberta na tela cheia', () => {
     vi.mocked(aiAssistantModule.useAIAutocomplete).mockReturnValue({
+      editorial: null,
       suggestion: 'continuação segura',
       isLoading: false,
       isAccepting: false,

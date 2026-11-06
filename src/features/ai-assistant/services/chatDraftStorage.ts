@@ -6,6 +6,7 @@ import {
 
 export interface ChatPendingRequest {
   requestId: string;
+  messageInstance?: string;
   text: string;
   context: ChatContext;
   generation?: ChatGenerationRequest;
@@ -33,6 +34,9 @@ export function readChatRecovery(
     if (
       typeof pending.requestId !== 'string' ||
       !/^[a-zA-Z0-9_-]{1,128}$/.test(pending.requestId) ||
+      (pending.messageInstance !== undefined &&
+        (typeof pending.messageInstance !== 'string' ||
+          !/^[a-zA-Z0-9_-]{1,128}$/.test(pending.messageInstance))) ||
       typeof pending.text !== 'string' ||
       pending.text.length > 4000 ||
       !pending.context ||
@@ -43,6 +47,7 @@ export function readChatRecovery(
       draft: value.draft,
       request: {
         requestId: pending.requestId,
+        ...(pending.messageInstance ? { messageInstance: pending.messageInstance } : {}),
         text: pending.text,
         context: pending.context,
         ...(generation ? { generation } : {}),
@@ -64,9 +69,17 @@ export function writeChatRecovery(
     : null;
   if (value.request?.generation && !generation)
     throw new Error('Configuração de recuperação inválida.');
+  if (
+    value.request?.messageInstance !== undefined &&
+    !/^[a-zA-Z0-9_-]{1,128}$/.test(value.request.messageInstance)
+  )
+    throw new Error('Identidade de recuperação inválida.');
   const request = value.request
     ? {
         requestId: value.request.requestId,
+        ...(value.request.messageInstance
+          ? { messageInstance: value.request.messageInstance }
+          : {}),
         text: value.request.text,
         context: value.request.context,
         ...(generation ? { generation } : {}),

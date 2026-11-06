@@ -44,7 +44,8 @@ async function scene(api, parentId = null, n = 2, content = '<p>Um texto</p>') {
 }
 const finish = async (call) => {
   let result;
-  for (let i = 0; i < 100; i++) {
+  // One-document pages also visit the complete literary cleanup inventory.
+  for (let i = 0; i < 256; i++) {
     result = await call();
     if (result.complete) return result;
   }
@@ -490,6 +491,36 @@ test('book cleanup is bounded, requires revocation, keeps sentinel until childre
     scopeId: 'book',
     entityId: 'lore',
   });
+  records.set('books/book/literarySequenceJobs/orphan', { jobId: 'orphan', state: 'active' });
+  records.set('books/book/literaryPassageInspections/orphan', { state: 'ready', count: 100 });
+  records.set('books/book/literaryPublicationGuideDependencies/orphan', {
+    jobId: 'orphan',
+    chapterIds: ['private-chapter'],
+  });
+  for (const collection of [
+    'literaryImpactControls',
+    'literaryImpactChecks',
+    'literaryImpactDecisions',
+    'literaryImpactDecisionVersions',
+  ])
+    records.set('books/book/' + collection + '/orphan', { jobId: 'orphan', note: 'Private' });
+  records.set('books/book/literaryWorkflowJobs/orphan', {
+    jobId: 'orphan',
+    chapterId: group.id,
+    phase: 'firstVersion',
+    paused: false,
+    limits: { maxApplications: 2, maxCredits: 2, maxSteps: 100 },
+  });
+  records.set('books/book/literaryIntegrationArchitecture/orphan', {
+    jobId: 'missing-job',
+    index: 0,
+    source: { kind: 'plan', id: 'brief', arcId: null },
+    coverage: null,
+  });
+  records.set('books/book/literaryBackupControls/current', {
+    schemaVersion: 1,
+    writeId: '00000000-0000-4000-8000-000000000000',
+  });
   const request = { target, operationId: op(7), limit: 1 };
   await assert.rejects(api.deleteSceneBook('author', request), { code: 'failed-precondition' });
   records.set('books/book', { ...records.get('books/book'), deleting: true });
@@ -676,5 +707,49 @@ test('legacy missing dates are explicit version zero for observed deletion, and 
   await assert.rejects(
     api.listSceneSources('author', { target, expectedProjectRevision, cursor: first.nextCursor }),
     (error) => error.details?.reason === 'revision-conflict',
+  );
+});
+
+test('a late literary marker at deletion finish restarts the bounded literary pass before deleting the root', async () => {
+  const { api, records } = fixture();
+  records.set('books/book', { ...records.get('books/book'), deleting: true });
+  const request = { target, operationId: op(907), limit: 1 };
+  const checkpoint = () =>
+    [...records.values()].find(
+      (value) => value.kind === 'delete-book' && value.input?.operationId === request.operationId,
+    );
+  let ready = false;
+  for (let step = 0; step < 500; step++) {
+    const result = await api.deleteSceneBook('author', request);
+    assert.equal(result.complete, false);
+    if (checkpoint()?.phase === 'finish') {
+      ready = true;
+      break;
+    }
+  }
+  assert.equal(ready, true);
+  assert.equal(records.has('books/book'), true);
+  records.set('books/book/literaryImpactControls/late-cancel', { phase: 'canceled' });
+  records.set('books/book/literaryBackupControls/current', {
+    schemaVersion: 1,
+    writeId: '00000000-0000-4000-8000-000000000000',
+  });
+  const restarted = await api.deleteSceneBook('author', request);
+  assert.equal(restarted.complete, false);
+  assert.equal(checkpoint().phase, 'literaryProduction');
+  assert.equal(records.has('books/book'), true);
+  let done = false;
+  for (let step = 0; step < 500; step++) {
+    const result = await api.deleteSceneBook('author', request);
+    if (result.complete) {
+      done = true;
+      break;
+    }
+  }
+  assert.equal(done, true);
+  assert.equal(records.has('books/book'), false);
+  assert.equal(
+    [...records.keys()].some((path) => path.startsWith('books/book/')),
+    false,
   );
 });

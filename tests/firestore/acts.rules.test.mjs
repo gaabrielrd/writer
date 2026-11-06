@@ -1,3 +1,4 @@
+import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 import { readFile } from 'node:fs/promises';
 import {
@@ -90,12 +91,21 @@ describe('atos privados e projeção pública', { concurrency: false }, () => {
     await assertSucceeds(deleteDoc(doc(firestore, 'books/book/acts/a')));
   });
   it('aceita vínculo local ou Sem ato e recusa ato de outro livro e inexistente', async () => {
-    const chapterRef = doc(db(), 'books/book/chapters/c');
-    await assertSucceeds(updateDoc(chapterRef, { actId: 'a' }));
-    await assertSucceeds(updateDoc(chapterRef, { actId: null }));
-    await assertFails(updateDoc(chapterRef, { actId: 'foreign' }));
-    await assertFails(updateDoc(chapterRef, { actId: 'missing' }));
-    await assertFails(updateDoc(chapterRef, { actId: 7 }));
+    const firestore = db(),
+      chapterRef = doc(firestore, 'books/book/chapters/c');
+    const link = (actId, updatedAt) => {
+      const batch = writeBatch(firestore);
+      batch.update(chapterRef, { actId });
+      batch.update(doc(firestore, 'books/book'), { updatedAt });
+      return batch.commit();
+    };
+    await assertFails(updateDoc(chapterRef, { actId: 'a' }));
+    await assertSucceeds(link('a', 101));
+    await assertSucceeds(link(null, 102));
+    await assertFails(link('foreign', 103));
+    await assertFails(link('missing', 103));
+    await assertFails(link(7, 103));
+    assert.equal((await getDoc(doc(firestore, 'books/book'))).data().updatedAt, 102);
   });
   it('aceita exclusão em lote pelo autor e bloqueia intruso', async () => {
     const intruderDb = db('intruder');

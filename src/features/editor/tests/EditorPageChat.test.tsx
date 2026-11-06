@@ -78,6 +78,8 @@ vi.mock('@/features/ai-assistant', async () => ({
                   role: 'assistant',
                   text: 'Explicação',
                   suggestion: 'Novo texto',
+                  messageInstance: 'shown-instance',
+                  generationAttempt: 'shown-attempt',
                   state: 'done',
                   createdAt: 1,
                   provider: 'platform',
@@ -163,6 +165,9 @@ describe('aceite do chat no editor', () => {
       expect.objectContaining({
         action: 'apply',
         expectedHash: sha('<p>Texto</p>'),
+        messageInstance: 'shown-instance',
+        generationAttempt: 'shown-attempt',
+        suggestionHash: sha('Novo texto'),
         after: '<p>Novo texto</p>',
       }),
     );

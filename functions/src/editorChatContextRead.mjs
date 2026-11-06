@@ -1,4 +1,9 @@
 import { readAvailablePersonaMetadata } from './personaAvailability.mjs';
+import {
+  literaryWritingScope,
+  readLiteraryWritingEnvironment,
+  authorizeLiteraryWritingManifest,
+} from './literaryWritingContext.mjs';
 import { GenerationError } from './generation.mjs';
 import { assertAdventureNotDeleted } from './adventureDeletionGuard.mjs';
 import { createBookLoreContextReader } from './bookLoreContextRead.mjs';
@@ -105,6 +110,7 @@ const projectFields = [
   'title',
   'universeId',
   'localLoreVersion',
+  'hasLiteraryResources',
   'loreVersion',
   'personaId',
   'personaRevision',
@@ -291,7 +297,12 @@ export async function readEditorChatSource(tx, db, uid, scope, { withContent = f
   return { ...project, scope, scene, resourceSnapshot, bodySnapshot, source };
 }
 
-export async function readEditorChatEnvironment(tx, db, source) {
+export async function readEditorChatEnvironment(
+  tx,
+  db,
+  source,
+  { literaryPlanIds, includeLiterary = true } = {},
+) {
   const { uid, target, root } = source;
   let localVersion;
   try {
@@ -330,7 +341,22 @@ export async function readEditorChatEnvironment(tx, db, source) {
     };
   }
   const authorization = await readCampaignAuthorization(tx, db, uid);
+  let literary = {};
+  if (target.kind === 'book' && includeLiterary && root.hasLiteraryResources === true) {
+    const writing = await readLiteraryWritingEnvironment(
+      tx,
+      literaryWritingScope(db, uid, target),
+      source.scope.resource,
+      literaryPlanIds,
+    );
+    if (writing.editorial.revision > 0 || writing.manifest.planIds.length > 0)
+      literary = {
+        literaryToken: writing.stateToken,
+        ...(literaryPlanIds === undefined ? {} : { literarySelection: literaryPlanIds }),
+      };
+  }
   return {
+    ...literary,
     localVersion,
     world,
     authorization: authorization.record
@@ -386,6 +412,12 @@ async function readProfile(tx, db, uid, id, full) {
   };
 }
 
+// Metadata-only public server port. Preserve native preset/custom and restore
+// availability checks without loading private profile instructions.
+export async function readEditorChatPersonaProfileMetadata(tx, db, uid, id) {
+  const value = await readProfile(tx, db, uid, id, false);
+  return { metadata: value.metadata, capturedStamp: value.capturedStamp, leaf: value.leaf };
+}
 export async function readEditorChatPersona(tx, db, source, { full = false } = {}) {
   const { uid, target, root, scene } = source;
   const baseId = root.personaId ?? null;
@@ -611,7 +643,14 @@ function loreMetadata(value, reference) {
     global: reference.kind === 'universe',
   };
 }
-export async function readEditorChatLore(tx, db, source, environment, reference) {
+export async function readEditorChatLore(
+  tx,
+  db,
+  source,
+  environment,
+  reference,
+  { metadataOnly = false } = {},
+) {
   const global = reference.kind === 'universe';
   if (
     global
@@ -633,7 +672,9 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
       ? metadataFields
       : reference.kind === 'book'
         ? bookOriginFields
-        : loreFields,
+        : metadataOnly
+          ? ['deleting', 'deleted']
+          : loreFields,
   );
   let record = snapshot.data();
   if (!record || record.deleted || record.deleting) editorChatFail('provenance-revoked');
@@ -670,7 +711,8 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
     };
     record = storedMetadata(record, c, reference.entityId);
   }
-  const metadata = reference.kind === 'book' ? null : loreMetadata(record, reference),
+  const metadata =
+      reference.kind === 'book' || metadataOnly ? null : loreMetadata(record, reference),
     scopeToken = await editorChatScopeIdentity(source.uid, scope, rootSnapshot);
   const entityIdentityToken = await editorChatEntityIdentity(reference, scopeToken, snapshot);
   return {
@@ -681,6 +723,13 @@ export async function readEditorChatLore(tx, db, source, environment, reference)
     c,
     leaf: { kind: 'lore', reference, scopeToken, entityIdentityToken },
   };
+}
+// Native grant/identity reader for metadata-only dependency verification.
+export async function readEditorChatLoreOrigin(tx, db, source, environment, reference) {
+  const found = await readEditorChatLore(tx, db, source, environment, reference, {
+    metadataOnly: true,
+  });
+  return { leaf: found.leaf, capturedStamp: editorChatNativeStamp(found.snapshot, 'updateTime') };
 }
 export async function readEditorChatLoreSnapshot(
   tx,
@@ -759,7 +808,7 @@ export async function authorizeEditorChatManifest(tx, db, uid, scope, manifest, 
     { ownerId: uid, ...scope },
   );
   const source = await readEditorChatSource(tx, db, uid, scope),
-    environment = await readEditorChatEnvironment(tx, db, source);
+    environment = await readEditorChatEnvironment(tx, db, source, { includeLiterary: false });
   for (const leaf of closure.leaves) {
     if (leaf.kind === 'target') {
       if (
@@ -767,6 +816,16 @@ export async function authorizeEditorChatManifest(tx, db, uid, scope, manifest, 
         leaf.resourceToken !== source.source.resourceToken
       )
         editorChatFail('provenance-revoked');
+    } else if (leaf.kind === 'literary') {
+      try {
+        await authorizeLiteraryWritingManifest(
+          tx,
+          literaryWritingScope(db, uid, scope.target),
+          leaf.manifest,
+        );
+      } catch {
+        editorChatFail('provenance-revoked');
+      }
     } else if (leaf.kind === 'lore') {
       const current = await readEditorChatLore(tx, db, source, environment, leaf.reference);
       if (canonicalEditorChatJSON(current.leaf) !== canonicalEditorChatJSON(leaf))

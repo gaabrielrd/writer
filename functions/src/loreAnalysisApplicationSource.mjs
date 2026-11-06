@@ -37,6 +37,8 @@ export async function authorizeApplicationSource(tx, l, now) {
     (current.book.universeId ?? null) !== c.universeId ||
     (c.universeId !== null && !bornEqual(current.worldSnapshot, { createTime: c.universeBirth })) ||
     current.revision !== c.sourceRevision ||
+    (value.editorialContextToken !== undefined &&
+      current.editorialContext.contextToken !== value.editorialContextToken) ||
     (current.chapterHash !== value.chapterHash && current.chapterHash !== value.contentHash)
   )
     conflict();

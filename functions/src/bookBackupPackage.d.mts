@@ -5,17 +5,23 @@ import type {
 } from './bookBackupContainer.mjs';
 export const BOOK_PACKAGE_FORMAT: 'writer-book-archive';
 export const BOOK_PACKAGE_VERSION: 1;
-export type BookPackageSection =
+export const BOOK_PACKAGE_SUPPORTED_VERSIONS: readonly [1, 2];
+export type BookPackageVersion = 1 | 2;
+export type BookPackageBaseSection =
   'structure' | 'resources' | 'personas' | 'universe' | 'history' | 'draft' | 'cover';
-export const BOOK_PACKAGE_SECTIONS: readonly BookPackageSection[];
+export type BookPackageSection = BookPackageBaseSection | 'editorial';
+export const BOOK_PACKAGE_SECTIONS: readonly BookPackageBaseSection[];
+export function bookPackageSections(version?: BookPackageVersion): readonly BookPackageSection[];
 export interface BookPackageCount {
   records: number;
   payloadBytes: number;
 }
-export type BookPackageCounts = Record<BookPackageSection, BookPackageCount>;
+export type BookPackageCounts = Record<BookPackageBaseSection, BookPackageCount> & {
+  editorial?: BookPackageCount;
+};
 export interface BookPackageManifest {
   format: 'writer-book-archive';
-  version: 1;
+  version: BookPackageVersion;
   containerVersion: 1;
   projectKind: 'book';
   bookId: string;
@@ -31,14 +37,19 @@ export type BookPackageEvent =
   | { type: 'manifest'; manifest: BookPackageManifest }
   | { type: 'record'; section: BookPackageSection; record: BookBackupRecord };
 export function bookPackageSection(kind: string): BookPackageSection | null;
-export function createBookPackageCounts(): BookPackageCounts;
+export function createBookPackageCounts(version?: BookPackageVersion): BookPackageCounts;
 export function countBookPackageRecord(
   counts: BookPackageCounts,
   section: BookPackageSection,
   record: BookBackupRecord,
+  version?: BookPackageVersion,
 ): void;
-export function bookPackageHeader(bookId: string): BookBackupRecord;
-export function bookPackageEnd(bookId: string, counts: BookPackageCounts): BookBackupRecord;
+export function bookPackageHeader(bookId: string, version?: BookPackageVersion): BookBackupRecord;
+export function bookPackageEnd(
+  bookId: string,
+  counts: BookPackageCounts,
+  version?: BookPackageVersion,
+): BookBackupRecord;
 export function readBookBackupPackage(
   source: BookBackupByteSource,
   options?: { signal?: AbortSignal },
